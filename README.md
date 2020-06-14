@@ -1,109 +1,17 @@
-# TFT Library fof ESP-IDF
-This library use `ESP32_TFT_library` of [loboris](https://github.com/loboris)
 
-Offical link: https://github.com/loboris/ESP32_TFT_library
-## Requirements
-OS: Windows 10 version 1903 
+### TFT library for ESP32
 
-[ESP IDF version 3.3 (lastest)](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#) 
+---
 
-[xtensa toolchain version 5.2.0](https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-80-g6c4433a-5.2.0.zip)
+**This library must be built with the esp-idf release/v4.0 branch.**
 
-You can check version by the following command:
+ESP-IDF 4.0 is currently in beta and instructions are found [here](
+https://docs.espressif.com/projects/esp-idf/en/v4.0-beta1/get-started/index.html)
+---
 
-Windows10: `cmd /c ver`
+#### Features
 
-ESP-IDF: `git describe --tags --dirty`
-
-xtensa toolchain: `xtensa-esp32-elf-gcc --version`
-
-## LCD configuration
-
-You can customize the PIN to match your TFT LCD in `main` folder at `spiffs_vfs.c` file from line 129 to line 187.
-```
-// Configuration for other boards, set the correct values for the display used
-//----------------------------------------------------------------------------
-#define DISP_COLOR_BITS_24	0x66
-//#define DISP_COLOR_BITS_16	0x55  // Do not use!
-
-// #############################################
-// ### Set to 1 for some displays,           ###
-//     for example the one on ESP-WROWER-KIT ###
-// #############################################
-#define TFT_INVERT_ROTATION 0
-#define TFT_INVERT_ROTATION1 0
-
-// ################################################
-// ### SET TO 0X00 FOR DISPLAYS WITH RGB MATRIX ###
-// ### SET TO 0X08 FOR DISPLAYS WITH BGR MATRIX ###
-// ### For ESP-WROWER-KIT set to 0x00           ###
-// ################################################
-#define TFT_RGB_BGR 0x08
-
-// ##############################################################
-// ### Define ESP32 SPI pins to which the display is attached ###
-// ##############################################################
-
-// The pins configured here are the native spi pins for HSPI interface
-// Any other valid pin combination can be used
-#define PIN_NUM_MISO 19		// SPI MISO
-#define PIN_NUM_MOSI 23		// SPI MOSI
-#define PIN_NUM_CLK  18		// SPI CLOCK pin
-#define PIN_NUM_CS   5		// Display CS pin
-#define PIN_NUM_DC   26		// Display command/data pin
-#define PIN_NUM_TCS  25		// Touch screen CS pin (NOT used if USE_TOUCH=0)
-
-// --------------------------------------------------------------
-// ** Set Reset and Backlight pins to 0 if not used !
-// ** If you want to use them, set them to some valid GPIO number
-#define PIN_NUM_RST  0  	// GPIO used for RESET control
-
-#define PIN_NUM_BCKL 0  	// GPIO used for backlight control
-#define PIN_BCKL_ON  0  	// GPIO value for backlight ON
-#define PIN_BCKL_OFF 1  	// GPIO value for backlight OFF
-// --------------------------------------------------------------
-
-// #######################################################
-// Set this to 1 if you want to use touch screen functions
-// #######################################################
-#define USE_TOUCH	TOUCH_TYPE_NONE
-// #######################################################
-
-// #######################################################################
-// Default display width (smaller dimension) and height (larger dimension)
-// #######################################################################
-#define DEFAULT_TFT_DISPLAY_WIDTH  240
-#define DEFAULT_TFT_DISPLAY_HEIGHT 320
-// #######################################################################
-
-#define DEFAULT_GAMMA_CURVE 0
-#define DEFAULT_SPI_CLOCK   26000000
-#define DEFAULT_DISP_TYPE   DISP_TYPE_ILI9341
-//----------------------------------------------------------------------------
-```
-
-## How to build
-Configure your esp32 build environment as for esp-idf examples
-```sh
-idf.py menuconfig
-``` 
-**select flash size 4MB** `Serial flasher config → Flash size (4MB)` to increase flash size.
-
-**select tick rate 1000**  `Component config → FreeRTOS → Tick rate (Hz)` to get more accurate timings.
-
-```sh
-idf.py build
-```
-```sh
-idf.py -p <comUSB> flash
-```
-```sh
-idf.py -p <comUSB> monitor
-```
-NOTE: tft_demo project runs with on **ESP-WROWER-KIT v3** as default.
-## Features
-
-* Full support for **ILI9341**, **ILI9488**, **ST7789V** and **ST7735** based TFT modules in 4-wire SPI mode. Support for other controllers will be added later
+* Full support for **ILI9341**, **ILI9488**, **ST7789V** and **ST7735** based TFT modules in 4-wire SPI mode.
 * **18-bit (RGB)** color mode used
 * **SPI displays oriented SPI driver library** based on *spi-master* driver
 * Combined **DMA SPI** transfer mode and **direct SPI** for maximal speed
@@ -137,7 +45,7 @@ NOTE: tft_demo project runs with on **ESP-WROWER-KIT v3** as default.
     * **getFontCharacters**  Get all font's characters to buffer
 * **String write function**:
   * **TFT_print**  Write text to display.
-    * Strings can be printed at **any angle**. Rotation of the displayed text depends on *font_ratate* variable (0~360)
+    * Strings can be printed at **any angle**. Rotation of the displayed text depends on *tft_font_rotate* variable (0~360)
     * if *font_transparent* variable is set to 1, no background pixels will be printed
     * If the text does not fit the screen/window width it will be clipped ( if *text_wrap=0* ), or continued on next line ( if *text_wrap=1* )
     * Two special characters are allowed in strings: *\r* CR (0x0D), clears the display to EOL, *\n* LF (ox0A), continues to the new line, x=0
@@ -193,32 +101,32 @@ NOTE: tft_demo project runs with on **ESP-WROWER-KIT v3** as default.
   * **disp_select()**  Activate display's CS line
   * **disp_deselect()**  Deactivate display's CS line
   * **find_rd_speed()**  Find maximum spi clock for successful read from display RAM
-  * **TFT_display_init()**  Perform display initialization sequence. Sets orientation to landscape; clears the screen. SPI interface must already be setup, *tft_disp_type*, *_width*, *_height* variables must be set.
+  * **TFT_display_init()**  Perform display initialization sequence. Sets orientation to landscape; clears the screen. SPI interface must already be setup, *tft_disp_type*, *tft_width*, *tft_height* variables must be set.
   * **HSBtoRGB**  Converts the components of a color, as specified by the HSB model to an equivalent set of values for the default RGB model.
   * **TFT_setGammaCurve()** Select one of 4 Gamma curves
 * **compile_font_file**  Function which compiles font c source file to font file which can be used in *TFT_setFont()* function to select external font. Created file have the same name as source file and extension *.fnt*
 
 
 * **Global wariables**
-  * **orientation**  current screen orientation
-  * **font_ratate**  current font rotate angle (0~395)
-  * **font_transparent**  if not 0 draw fonts transparent
-  * **font_forceFixed**  if not zero force drawing proportional fonts with fixed width
-  * **text_wrap**  if not 0 wrap long text to the new line, else clip
-  * **_fg**  current foreground color for fonts
-  * **_bg**  current background for non transparent fonts
-  * **dispWin** current display clip window
-  * **_angleOffset**  angle offset for arc, polygon and line by angle functions
-  * **image_debug**  print debug messages during image decode if set to 1
-  * **cfont**  Currently used font structure
-  * **TFT_X**  X position of the next character after TFT_print() function
-  * **TFT_Y**  Y position of the next character after TFT_print() function
-  * **tp_calx**  touch screen X calibration constant
-  * **tp_caly**  touch screen Y calibration constant
-  * **gray_scale**  convert all colors to gray scale if set to 1
-  * **max_rdclock**  current spi clock for reading from display RAM
-  * **_width** screen width (smaller dimension) in pixels
-  * **_height** screen height (larger dimension) in pixels
+  * **tft_orientation**  current screen orientation
+  * **tft_font_rotate**  current font rotate angle (0~395)
+  * **tft_font_transparent**  if not 0 draw fonts transparent
+  * **tft_font_forceFixed**  if not zero force drawing proportional fonts with fixed width
+  * **tft_text_wrap**  if not 0 wrap long text to the new line, else clip
+  * **tft_fg**  current foreground color for fonts
+  * **tft_bg**  current background for non transparent fonts
+  * **tft_dispWin** current display clip window
+  * **tft_angleOffset**  angle offset for arc, polygon and line by angle functions
+  * **tft_image_debug**  print debug messages during image decode if set to 1
+  * **tft_cfont**  Currently used font structure
+  * **tft_x**  X position of the next character after TFT_print() function
+  * **tft_y**  Y position of the next character after TFT_print() function
+  * **tft_tp_calx**  touch screen X calibration constant
+  * **tft_tp_caly**  touch screen Y calibration constant
+  * **tft_gray_scale**  convert all colors to gray scale if set to 1
+  * **tft_max_rdclock**  current spi clock for reading from display RAM
+  * **tft_width** screen width (smaller dimension) in pixels
+  * **tft_height** screen height (larger dimension) in pixels
   * **tft_disp_type**  current display type (DISP_TYPE_ILI9488 or DISP_TYPE_ILI9341)
 
 ---
@@ -256,21 +164,110 @@ To run the demo, attach ILI9341, ILI9488 or ST7735 based display module to ESP32
 *   DC: 26 (display DC)
 *  TCS: 25 (touch screen CS)
 
+**Custom PINS can be defined in `idf.py menuconfig` in Components -> TFT Display menu**
+---
+
+#### Display Kits
+
+Predefined display configurations are available that will set pins, display size, and inversion properly for the specified kit.
+
+Access these through the `idf.py menuconfig` in Components->TFT Display
+
+Configurations are available for:
+
+    "ESP-WROVER-KIT v3 Display (ST7789V)"
+    "ESP-WROVER-KIT v4.1 Display (ILI9341)"
+    "Adafruit TFT Feather Display"
+    "M5Stack TFT Display"
+
+---
+
+#### Other config notes
+
+Touch screen can be enabled in Components -> TFT Display as well.
+
+Using *idf.py menuconfig* **select tick rate 1000** ( → Component config → FreeRTOS → Tick rate (Hz) ) to get more accurate timings
+
+---
+
+#### Installing as Library
+This repository is intended to be installable as a component library using the ESP-IDF 4.0 build system.
+
+It is recommended though that you first follow the [demo instructions](#building-the-demo) below to build this repository as a standalone example to validate your hardware and have a basis to learn the library features. 
+
+When you are ready to incorporate it into your existing project, it is recommended to:
+
+```shell
+mkdir -p externals
+git submodule add https://github.com/jeremyjh/ESP32_TFT_library.git externals/ESP32_TFT_library
+```
+
+In your project's root CMakeLists.txt add the components folder to `EXTRA_COMPONENT_DIRS` - make sure this is before the project() config e.g.
+
+```cmake
+cmake_minimum_required(VERSION 3.5)
+
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+    set(EXTRA_COMPONENT_DIRS
+            externals/ESP32_TFT_library/components)
+
+project(hello-world)
+```
+
+In your own components/<my-component>/CMakeLists.txt or main/CMakeLists.txt add `tft` and `spiffs` (if you are using spiffs) as `REQUIRES` e.g.
+
+```cmake
+set(SOURCES tft_demo.c)
+idf_component_register(
+        SRCS ${SOURCES}
+        INCLUDE_DIRS
+          ${CMAKE_CURRENT_LIST_DIR}
+          $ENV{IDF_PATH}/components
+        REQUIRES
+            tft
+            spiffs
+)
+```
+
+---
+
+#### Building the Demo
+
+Clone the repository to your esp folder (same level as esp-idf, as explained [in instructions](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html)).
+
+`git clone https://github.com/jeremyjh/ESP32_TFT_library.git`
+
+Execute `idf.py menuconfig` and configure your Serial flash config and other settings. Included *sdkconfig.defaults* sets some defaults to be used.
+
+Navigate to **Components -> TFT Display** and set **display and pin** options or select a pre-defined display configuration for a kit.
+
+To enable **Wifi** in the demo (recommended - gets time from NTP), select **TFT Display DEMO Configuration** from the top-level menu and select those options.
+
+Make and flash the example.
+
+`idf.py build && idf.py -p <PORT> flash monitor`
+
+Deploy the SPIFFS image as below to make the image and font examples work.
+
 ---
 
 #### Prepare **SPIFFS** image
-
-*This feature is only tested on Linux.*
 
 *The demo uses some image and font files and it is necessary to flash the spiffs image*
 
 **To flash already prepared image to flash** execute:
 
-`make copyfs`
+`ESPPORT=<PORT> make copyfs`
 
 ---
 
 You can also prepare different SFPIFFS **image** and flash it to ESP32.
+
+The example partition file reserves 1MB for SPIFFS.
+If you change the spiffs partition size, update the SPIFFS configuration as well.
+
+`idf.py menuconfig`
+Navigate to **Components -> TFT SPIFFS** and set **SPIFFS** options.
 
 Files to be included on spiffs are already in **components/spiffs_image/image/** directory. You can add or remove the files you want to include.
 
@@ -282,11 +279,13 @@ to create **spiffs image** in *build* directory **without flashing** to ESP32
 
 Or execute:
 
-`make flashfs`
+`ESPPORT=<PORT> make flashfs`
 
 to create **spiffs image** in *build* directory and **flash** it to ESP32
 
 ---
+
+
 ---
 
 **Example output:**
@@ -420,7 +419,7 @@ Send color buffer time: 228 us (240 pixels)
 
 ### Tested on
 
-ESP32-WROVER-KIT v3, ILI9341 controller, 240x320
+ESP32-WROVER-KIT v3, ST7789V controller, 240x320
 ![Tested on](https://raw.githubusercontent.com/loboris/MicroPython_ESP32_psRAM_LoBo/master/Documents/disp_wrower-kit.jpg)
 
 2.4" 240x320 ILI9341 conroller with Touch panel from eBay
@@ -432,5 +431,3 @@ ESP32-WROVER-KIT v3, ILI9341 controller, 240x320
 1.8" 128x160 ST7735 conroller from eBay
 ![Tested on](https://raw.githubusercontent.com/loboris/MicroPython_ESP32_psRAM_LoBo/master/Documents/disp_7735.jpg)
 
-
-## You'll do great !
