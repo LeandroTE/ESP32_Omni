@@ -1,12 +1,14 @@
 /***************************************************************************************************
- ===  Primitus Omni Project====
- * @file 	main.c
+ * @file 	System.c
  * @brief	System functions
  * @author	Leandro
  * @date	20/06/2020
  * @company	
  *
  **************************************************************************************************/
+
+#ifndef SYSYEM_H_
+#define SYSYEM_H_
 
 /***************************************************************************************************
 * INCLUDES
@@ -18,8 +20,6 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
-#include "system.h"
 #include "tftspi.h"
 #include "tft.h"
 #include "spiffs_vfs.h"
@@ -33,6 +33,28 @@
 * MACROS
 ***************************************************************************************************/
 
+#define SPI_BUS TFT_HSPI_HOST                       // Define which spi bus to use TFT_VSPI_HOST or TFT_HSPI_HOST
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+#define LEDC_HS_TIMER          LEDC_TIMER_0
+#define LEDC_HS_MODE           LEDC_HIGH_SPEED_MODE
+#define LEDC_HS_CH0_GPIO       (2)
+#define LEDC_HS_CH0_CHANNEL    LEDC_CHANNEL_0
+#define LEDC_HS_CH1_GPIO       (15)
+#define LEDC_HS_CH1_CHANNEL    LEDC_CHANNEL_1
+#endif
+#define LEDC_LS_TIMER          LEDC_TIMER_1
+#define LEDC_LS_MODE           LEDC_LOW_SPEED_MODE
+
+#define LEDC_LS_CH2_GPIO       (13)
+#define LEDC_LS_CH2_CHANNEL    LEDC_CHANNEL_2
+#define LEDC_LS_CH3_GPIO       (12)
+#define LEDC_LS_CH3_CHANNEL    LEDC_CHANNEL_3
+
+#define LEDC_TEST_CH_NUM       (4)
+#define LEDC_TEST_DUTY         (1000)
+#define LEDC_TEST_FADE_TIME    (3000)
+
 /***************************************************************************************************
 * TYPES
 ***************************************************************************************************/
@@ -41,63 +63,27 @@
 * GLOBALS VARIABLES
 ***************************************************************************************************/
 
-static char tmp_buff[64];
-
 /***************************************************************************************************
-* LOCALS FUNCTIONS
+* PUBLIC FUNCTIONS
 ***************************************************************************************************/
 
-//---------------------------------
-static void disp_header(char *info)
-{
-	TFT_fillScreen(TFT_BLACK);
-	TFT_resetclipwin();
 
-	tft_fg = TFT_YELLOW;
-	tft_bg = (color_t){64, 64, 64};
-
-	if (tft_width < 240)
-		TFT_setFont(DEF_SMALL_FONT, NULL);
-	else
-		TFT_setFont(DEFAULT_FONT, NULL);
-	TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 8, tft_bg);
-	TFT_drawRect(0, 0, tft_width - 1, TFT_getfontheight() + 8, TFT_CYAN);
-
-	TFT_print(info, CENTER, 4);
-
-	tft_bg = TFT_BLACK;
-	TFT_setclipwin(0, TFT_getfontheight() + 9, tft_width - 1, tft_height - TFT_getfontheight() - 10);
-}
-
-void app_main()
-{
-	// ==== Initialize TFT ====
-	tft_init();
-
-	// ==== Initialize PWM ====
-	pwm_init();
-
-	vTaskDelay(500 / portTICK_RATE_MS);
-	printf("\r\n==============================\r\n");
-	printf("PRIMITUS OMNI, LEANDRO 06/2020\r\n");
-	printf("==============================\r\n");
-	printf("Pins used: miso=%d, mosi=%d, sck=%d, cs=%d\r\n", PIN_NUM_MISO, PIN_NUM_MOSI, PIN_NUM_CLK, PIN_NUM_CS);
-	printf("==============================\r\n\r\n");
-
-	TFT_setRotation(1);
-	disp_header("PRIMITUS OMNI v0.1");
-	TFT_setFont(DEFAULT_FONT, NULL);
-	int tempy = TFT_getfontheight() + 4;
-	tft_fg = TFT_ORANGE;
-	TFT_print("ESP32", 0, LASTY + tempy);
-	tft_fg = TFT_CYAN;
-	TFT_print("TFT Demo", 0, LASTY + tempy);
-	tft_fg = TFT_GREEN;
-	sprintf(tmp_buff, "Read speed: %5.2f MHz", (float)tft_max_rdclock / 1000000.0);
-	TFT_print(tmp_buff, 0, LASTY + tempy);
-
-}
+void tft_init();
+void pwm_init();
 
 /***************************************************************************************************
 * END OF FILE
 ***************************************************************************************************/
+#endif /* SYSYEM_H_ */
+
+
+
+
+
+
+
+
+
+
+
+
