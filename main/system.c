@@ -149,14 +149,43 @@ void tft_init(){
 }
 
 /***************************************************************************************************
- * @brief Responsible for the initialization of the TFT Display
+ * @brief Create HEADER with retangule box in TFT Display
  *
- * @param 
+ * @param info - String to be display in yhe header
  *
  * @return void
  * 
- *  
- * 1. Start with initializing LEDC module:
+ * ************************************************************************************************/
+void disp_header(char *info){
+	TFT_fillScreen(TFT_BLACK);
+	TFT_resetclipwin();
+
+	tft_fg = TFT_YELLOW;
+	tft_bg = (color_t){64, 64, 64};
+
+	if (tft_width < 240)
+		TFT_setFont(DEF_SMALL_FONT, NULL);
+	else
+		TFT_setFont(DEFAULT_FONT, NULL);
+	TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 8, tft_bg);
+	TFT_drawRect(0, 0, tft_width - 1, TFT_getfontheight() + 8, TFT_CYAN);
+
+	TFT_print(info, CENTER, 4);
+
+	tft_bg = TFT_BLACK;
+	TFT_setclipwin(0, TFT_getfontheight() + 9, tft_width - 1, tft_height - TFT_getfontheight() - 10);
+}
+
+
+
+
+/***************************************************************************************************
+ * @brief Responsible for the initialization of the PWM
+ *
+ * @param 
+ * @return void
+ * 
+  * 1. Start with initializing LEDC module:
  *    a. Set the timer of LEDC first, this determines the frequency and resolution of PWM.
  *    b. Then set the LEDC channel you want to use, and bind with one of the timers.
  *
@@ -188,14 +217,7 @@ void pwm_init(){
  *
  * @return void
  * 
- *  
- * 1. Start with initializing LEDC module:
- *    a. Set the timer of LEDC first, this determines the frequency and resolution of PWM.
- *    b. Then set the LEDC channel you want to use, and bind with one of the timers.
- *
- * 2. You need first to install a default fade function,
- *    then you can use fade APIs.
-  *************************************************************************************************/
+*************************************************************************************************/
 void set_PWM_duty(float duty, int channel){
 
     int duty_cycle;
@@ -217,14 +239,10 @@ void set_PWM_duty(float duty, int channel){
  * @return void
  * 
  *  
- * 1. Start with initializing LEDC module:
- *    a. Set the timer of LEDC first, this determines the frequency and resolution of PWM.
- *    b. Then set the LEDC channel you want to use, and bind with one of the timers.
- *
- * 2. You need first to install a default fade function,
- *    then you can use fade APIs.
-  *************************************************************************************************/
-
+ **************************************************************************************************/
+void GPIO_Init(){
+    
+}
 
 
 /***************************************************************************************************

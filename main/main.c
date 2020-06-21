@@ -17,13 +17,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 
+#include "freertos/task.h"
 #include "system.h"
 #include "tftspi.h"
 #include "tft.h"
 #include "spiffs_vfs.h"
+
 #include "driver/ledc.h"
+#include "driver/gpio.h"
 
 /***************************************************************************************************
 * COSNTANTS
@@ -47,32 +49,65 @@ static char tmp_buff[64];
 * LOCALS FUNCTIONS
 ***************************************************************************************************/
 
+static xQueueHandle gpio_evt_queue = NULL;
 
-static void disp_header(char *info){
-	TFT_fillScreen(TFT_BLACK);
-	TFT_resetclipwin();
-
-	tft_fg = TFT_YELLOW;
-	tft_bg = (color_t){64, 64, 64};
-
-	if (tft_width < 240)
-		TFT_setFont(DEF_SMALL_FONT, NULL);
-	else
-		TFT_setFont(DEFAULT_FONT, NULL);
-	TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 8, tft_bg);
-	TFT_drawRect(0, 0, tft_width - 1, TFT_getfontheight() + 8, TFT_CYAN);
-
-	TFT_print(info, CENTER, 4);
-
-	tft_bg = TFT_BLACK;
-	TFT_setclipwin(0, TFT_getfontheight() + 9, tft_width - 1, tft_height - TFT_getfontheight() - 10);
+static void IRAM_ATTR gpio_isr_handler(void* arg)
+{
+    uint32_t gpio_num = (uint32_t) arg;
+    xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
 }
 
+static void gpio_task_example(void* arg)
+{
+    uint32_t io_num;
+    for(;;) {
+        if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
+            printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
+        }
+    }
+}
+
+
 void app_main(){
-	
+
 	// ==== System Initialization ====
 	tft_init();										// TFT Init
 	pwm_init();										// PWM Init
+
+	// ==== GPIO Init ====
+    gpio_config_t io_conf;
+    //disable interrupt
+    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    //interrupt of rising edge
+    io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;
+    //bit mask of the pins, use GPIO4/5 here
+    io_conf.pin_bit_mask = GPIO_INPUT_PIN_SEL;
+    //set as input mode    
+    io_conf.mode = GPIO_MODE_INPUT;
+    //enable pull-up mode
+    io_conf.pull_up_en = 1;
+    gpio_config(&io_conf);
+
+    //change gpio intrrupt type for one pin
+    gpio_set_intr_type(GPIO_INPUT_IO_0, GPIO_INTR_ANYEDGE);
+
+    //create a queue to handle gpio event from isr
+    gpio_evt_queue = xQueueCreate(10, sizeof(uint32_t));
+    //start gpio task
+    xTaskCreate(gpio_task_example, "gpio_task_example", 2048, NULL, 10, NULL);
+
+    //install gpio isr service
+    gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
+    //hook isr handler for specific gpio pin
+    gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
+    //hook isr handler for specific gpio pin
+    gpio_isr_handler_add(GPIO_INPUT_IO_1, gpio_isr_handler, (void*) GPIO_INPUT_IO_1);
+
+    //remove isr handler for gpio number.
+    gpio_isr_handler_remove(GPIO_INPUT_IO_0);
+    //hook isr handler for specific gpio pin again
+    gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
+
 
 	vTaskDelay(500 / portTICK_RATE_MS);
 	printf("\r\n==============================\r\n");
