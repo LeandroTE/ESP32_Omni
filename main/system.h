@@ -18,14 +18,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "freertos/FreeRTOS.h"
 
+#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "tftspi.h"
 #include "tft.h"
 #include "spiffs_vfs.h"
-#include "driver/ledc.h"
 
+#include "driver/ledc.h"
 #include "driver/gpio.h"
 
 /***************************************************************************************************
@@ -86,7 +86,7 @@ void pwm_init();
 void set_PWM_duty(float duty, int channel);
 
 // ================== GPIO ==================
-void GPIO_Init();
+void GPIO_Init(gpio_config_t io_conf);
 
 
 /***************************************************************************************************

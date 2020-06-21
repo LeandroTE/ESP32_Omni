@@ -16,14 +16,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "freertos/FreeRTOS.h"
 
+#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "system.h"
 #include "tftspi.h"
 #include "tft.h"
-#include "spiffs_vfs.h"
 
+#include "spiffs_vfs.h"
 #include "driver/ledc.h"
 #include "driver/gpio.h"
 
@@ -44,69 +44,55 @@
 ***************************************************************************************************/
 
 static char tmp_buff[64];
-
-/***************************************************************************************************
-* LOCALS FUNCTIONS
-***************************************************************************************************/
-
 static xQueueHandle gpio_evt_queue = NULL;
 
-static void IRAM_ATTR gpio_isr_handler(void* arg)
-{
+/***************************************************************************************************
+* ISR'S
+***************************************************************************************************/
+
+static void IRAM_ATTR gpio_isr_handler(void* arg){
+
     uint32_t gpio_num = (uint32_t) arg;
     xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
 }
 
-static void gpio_task_example(void* arg)
-{
+/***************************************************************************************************
+* TASKS
+***************************************************************************************************/
+
+static void gpio_task(void* arg){
+
     uint32_t io_num;
-    for(;;) {
+    while(1) {
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
         }
     }
 }
 
+/***************************************************************************************************
+* LOCALS FUNCTIONS
+***************************************************************************************************/
 
 void app_main(){
+	gpio_config_t io_conf;														// Declare GPIO config structure
+
 
 	// ==== System Initialization ====
-	tft_init();										// TFT Init
-	pwm_init();										// PWM Init
+	tft_init();																	// TFT Init
+	pwm_init();																	// PWM Init
+    GPIO_Init(io_conf);															// GPIO Init
+	
+	// ==== Task Creation ====
+    gpio_evt_queue = xQueueCreate(10, sizeof(uint32_t));						//create a queue to handle gpio event from isr
+    xTaskCreate(gpio_task, "gpio_task", 2048, NULL, 10, NULL);					//start gpio task
 
-	// ==== GPIO Init ====
-    gpio_config_t io_conf;
-    //disable interrupt
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
-    //interrupt of rising edge
-    io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;
-    //bit mask of the pins, use GPIO4/5 here
-    io_conf.pin_bit_mask = GPIO_INPUT_PIN_SEL;
-    //set as input mode    
-    io_conf.mode = GPIO_MODE_INPUT;
-    //enable pull-up mode
-    io_conf.pull_up_en = 1;
-    gpio_config(&io_conf);
-
-    //change gpio intrrupt type for one pin
-    gpio_set_intr_type(GPIO_INPUT_IO_0, GPIO_INTR_ANYEDGE);
-
-    //create a queue to handle gpio event from isr
-    gpio_evt_queue = xQueueCreate(10, sizeof(uint32_t));
-    //start gpio task
-    xTaskCreate(gpio_task_example, "gpio_task_example", 2048, NULL, 10, NULL);
-
-    //install gpio isr service
-    gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
-    //hook isr handler for specific gpio pin
-    gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
-    //hook isr handler for specific gpio pin
-    gpio_isr_handler_add(GPIO_INPUT_IO_1, gpio_isr_handler, (void*) GPIO_INPUT_IO_1);
-
-    //remove isr handler for gpio number.
-    gpio_isr_handler_remove(GPIO_INPUT_IO_0);
-    //hook isr handler for specific gpio pin again
-    gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
+    
+    gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);							//install gpio isr service
+    gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, 
+						 (void*) GPIO_INPUT_IO_0);								//hook isr handler for specific gpio pin
+    gpio_isr_handler_add(GPIO_INPUT_IO_1, gpio_isr_handler, 
+						 (void*) GPIO_INPUT_IO_1);								//hook isr handler for specific gpio pin
 
 
 	vTaskDelay(500 / portTICK_RATE_MS);

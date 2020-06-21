@@ -31,21 +31,21 @@
 
     // ==== Prepare and set configuration of timers for LED Controller ====
     ledc_timer_config_t ledc_timer = {
-        .duty_resolution = LEDC_TIMER_13_BIT,       // resolution of PWM duty
-        .freq_hz = 1000,                            // frequency of PWM signal
-        .speed_mode = LEDC_LS_MODE,                 // timer mode
-        .timer_num = LEDC_LS_TIMER,                 // timer index
-        .clk_cfg = LEDC_AUTO_CLK,                   // Auto select the source clock
+        .duty_resolution = LEDC_TIMER_13_BIT,                                   // resolution of PWM duty
+        .freq_hz = 1000,                                                        // frequency of PWM signal
+        .speed_mode = LEDC_LS_MODE,                                             // timer mode
+        .timer_num = LEDC_LS_TIMER,                                             // timer index
+        .clk_cfg = LEDC_AUTO_CLK,                                               // Auto select the source clock
     };
 
     ledc_channel_config_t ledc_channel[LEDC_TEST_CH_NUM] = {
-        {.channel = LEDC_HS_CH0_CHANNEL,            // Select controller's channel number
-         .duty = 0,                                 // Set duty cycle to zero 
-         .gpio_num = LEDC_HS_CH0_GPIO,              // Select GPIO number where pwm is connected
-         .speed_mode = LEDC_HS_MODE,                // Set speed mode
+        {.channel = LEDC_HS_CH0_CHANNEL,                                        // Select controller's channel number
+         .duty = 0,                                                             // Set duty cycle to zero 
+         .gpio_num = LEDC_HS_CH0_GPIO,                                          // Select GPIO number where pwm is connected
+         .speed_mode = LEDC_HS_MODE,                                            // Set speed mode
          .hpoint = 0,
          .timer_sel = LEDC_HS_TIMER},
-        {.channel = LEDC_HS_CH1_CHANNEL,            // Repete for others channels
+        {.channel = LEDC_HS_CH1_CHANNEL,                                        // Repete for others channels
          .duty = 0,
          .gpio_num = LEDC_HS_CH1_GPIO,
          .speed_mode = LEDC_HS_MODE,
@@ -81,27 +81,27 @@ void tft_init(){
 
     esp_err_t ret;
 
-    tft_max_rdclock = 8000000;                      //Set maximum spi clock for display read
+    tft_max_rdclock = 8000000;                                                  //Set maximum spi clock for display read
 
-    TFT_PinsInit();                                 // Pins MUST be initialized before SPI
-                                                    //interface initialization
+    TFT_PinsInit();                                                             // Pins MUST be initialized before SPI
+                                                                                //interface initialization
 
     spi_lobo_device_handle_t spi;
 
     spi_lobo_bus_config_t buscfg = {
-        .miso_io_num = PIN_NUM_MISO,                // set SPI MISO pin
-        .mosi_io_num = PIN_NUM_MOSI,                // set SPI MOSI pin
-        .sclk_io_num = PIN_NUM_CLK,                 // set SPI CLK pin
+        .miso_io_num = PIN_NUM_MISO,                                            // set SPI MISO pin
+        .mosi_io_num = PIN_NUM_MOSI,                                            // set SPI MOSI pin
+        .sclk_io_num = PIN_NUM_CLK,                                             // set SPI CLK pin
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
         .max_transfer_sz = 6 * 1024,
     };
     spi_lobo_device_interface_config_t devcfg = {
-        .clock_speed_hz = 8000000,                  // Initial clock out at 8 MHz
-        .mode = 0,                                  // SPI mode 0
-        .spics_io_num = -1,                         // we will use external CS pin
-        .spics_ext_io_num = PIN_NUM_CS,             // external CS pin
-        .flags = LB_SPI_DEVICE_HALFDUPLEX,          // ALWAYS SET to HALF DUPLEX MODE for  spi
+        .clock_speed_hz = 8000000,                                              // Initial clock out at 8 MHz
+        .mode = 0,                                                              // SPI mode 0
+        .spics_io_num = -1,                                                     // we will use external CS pin
+        .spics_ext_io_num = PIN_NUM_CS,                                         // external CS pin
+        .flags = LB_SPI_DEVICE_HALFDUPLEX,                                      // ALWAYS SET to HALF DUPLEX MODE for  spi
     };
 
     // ==== Initialize the SPI bus and attach the LCD to the SPI bus ====
@@ -195,8 +195,8 @@ void disp_header(char *info){
 void pwm_init(){
     int ch;
 
-    ledc_timer_config(&ledc_timer);                 // Set configuration of timer0 for
-                                                    //high speed channels
+    ledc_timer_config(&ledc_timer);                                             // Set configuration of timer0 for
+                                                                                //high speed channels
 
     // ==== Prepare and set configuration of timer1 for low speed channels ====
     ledc_timer.speed_mode = LEDC_HS_MODE;
@@ -233,15 +233,23 @@ void set_PWM_duty(float duty, int channel){
 /***************************************************************************************************
  * @brief Function to set GPIO
  *
- * @param duty      - duty cycle to set in percentage ex: 99.5%
- * @param channel   - channel to set duty cycle
- *
+ * @param io_conf     gpio_config_t struct
+  *
  * @return void
- * 
- *  
+  *  
  **************************************************************************************************/
-void GPIO_Init(){
-    
+void GPIO_Init(gpio_config_t io_conf){
+
+    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;                                  //disable interrupt
+    io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;                                  //interrupt of rising edge
+    io_conf.pin_bit_mask = GPIO_INPUT_PIN_SEL;                                  //bit mask of the pins, use GPIO35/0 here
+    io_conf.mode = GPIO_MODE_INPUT;                                             //set as input mode
+    io_conf.pull_up_en = 1;                                                     //enable pull-up mode
+    gpio_config(&io_conf);
+
+        
+    gpio_set_intr_type(GPIO_INPUT_IO_0, GPIO_INTR_ANYEDGE);                     //change gpio intrrupt type for one pin
+
 }
 
 
