@@ -29,6 +29,41 @@
 * GLOBALS VARIABLES
 ***************************************************************************************************/
 
+    // ==== Prepare and set configuration of timers for LED Controller ====
+    ledc_timer_config_t ledc_timer = {
+        .duty_resolution = LEDC_TIMER_13_BIT,       // resolution of PWM duty
+        .freq_hz = 1000,                            // frequency of PWM signal
+        .speed_mode = LEDC_LS_MODE,                 // timer mode
+        .timer_num = LEDC_LS_TIMER,                 // timer index
+        .clk_cfg = LEDC_AUTO_CLK,                   // Auto select the source clock
+    };
+
+    ledc_channel_config_t ledc_channel[LEDC_TEST_CH_NUM] = {
+        {.channel = LEDC_HS_CH0_CHANNEL,            // Select controller's channel number
+         .duty = 0,                                 // Set duty cycle to zero 
+         .gpio_num = LEDC_HS_CH0_GPIO,              // Select GPIO number where pwm is connected
+         .speed_mode = LEDC_HS_MODE,                // Set speed mode
+         .hpoint = 0,
+         .timer_sel = LEDC_HS_TIMER},
+        {.channel = LEDC_HS_CH1_CHANNEL,            // Repete for others channels
+         .duty = 0,
+         .gpio_num = LEDC_HS_CH1_GPIO,
+         .speed_mode = LEDC_HS_MODE,
+         .hpoint = 0,
+         .timer_sel = LEDC_HS_TIMER},
+        {.channel = LEDC_LS_CH2_CHANNEL,
+         .duty = 0,
+         .gpio_num = LEDC_LS_CH2_GPIO,
+         .speed_mode = LEDC_LS_MODE,
+         .hpoint = 0,
+         .timer_sel = LEDC_LS_TIMER},
+        {.channel = LEDC_LS_CH3_CHANNEL,
+         .duty = 0,
+         .gpio_num = LEDC_LS_CH3_GPIO,
+         .speed_mode = LEDC_LS_MODE,
+         .hpoint = 0,
+         .timer_sel = LEDC_LS_TIMER},
+    };
 
 /***************************************************************************************************
 * PUBLIC FUNCTIONS
@@ -42,8 +77,7 @@
  * @return void
  * 
  * ************************************************************************************************/
-void tft_init()
-{
+void tft_init(){
 
     esp_err_t ret;
 
@@ -129,19 +163,8 @@ void tft_init()
  * 2. You need first to install a default fade function,
  *    then you can use fade APIs.
   *************************************************************************************************/
-void pwm_init()
-{
+void pwm_init(){
     int ch;
-
-
-    // ==== Prepare and set configuration of timers for LED Controller ====
-    ledc_timer_config_t ledc_timer = {
-        .duty_resolution = LEDC_TIMER_13_BIT,       // resolution of PWM duty
-        .freq_hz = 1000,                            // frequency of PWM signal
-        .speed_mode = LEDC_LS_MODE,                 // timer mode
-        .timer_num = LEDC_LS_TIMER,                 // timer index
-        .clk_cfg = LEDC_AUTO_CLK,                   // Auto select the source clock
-    };
 
     ledc_timer_config(&ledc_timer);                 // Set configuration of timer0 for
                                                     //high speed channels
@@ -151,61 +174,58 @@ void pwm_init()
     ledc_timer.timer_num = LEDC_HS_TIMER;
     ledc_timer_config(&ledc_timer);
 
-    /*
-     * Prepare individual configuration
-     * for each channel of LED Controller
-     * by selecting:
-     * - controller's channel number
-     * - output duty cycle, set initially to 0
-     * - GPIO number where LED is connected to
-     * - speed mode, either high or low
-     * - timer servicing selected channel
-     *   Note: if different channels use one timer,
-     *         then frequency and bit_num of these channels
-     *         will be the same
-     */
-    ledc_channel_config_t ledc_channel[LEDC_TEST_CH_NUM] = {
-        {.channel = LEDC_HS_CH0_CHANNEL,
-         .duty = 0,
-         .gpio_num = LEDC_HS_CH0_GPIO,
-         .speed_mode = LEDC_HS_MODE,
-         .hpoint = 0,
-         .timer_sel = LEDC_HS_TIMER},
-        {.channel = LEDC_HS_CH1_CHANNEL,
-         .duty = 0,
-         .gpio_num = LEDC_HS_CH1_GPIO,
-         .speed_mode = LEDC_HS_MODE,
-         .hpoint = 0,
-         .timer_sel = LEDC_HS_TIMER},
-        {.channel = LEDC_LS_CH2_CHANNEL,
-         .duty = 0,
-         .gpio_num = LEDC_LS_CH2_GPIO,
-         .speed_mode = LEDC_LS_MODE,
-         .hpoint = 0,
-         .timer_sel = LEDC_LS_TIMER},
-        {.channel = LEDC_LS_CH3_CHANNEL,
-         .duty = 0,
-         .gpio_num = LEDC_LS_CH3_GPIO,
-         .speed_mode = LEDC_LS_MODE,
-         .hpoint = 0,
-         .timer_sel = LEDC_LS_TIMER},
-    };
-
     // ==== Set LED Controller with previously prepared configuration ====
-    for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++)
-    {
+    for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++){
         ledc_channel_config(&ledc_channel[ch]);
     }
+}
 
-	printf("1. LEDC set duty = %d without fade\n", LEDC_TEST_DUTY);
-	for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++)
-	{
-		ledc_set_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel, LEDC_TEST_DUTY);
-		ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
-	}
-	vTaskDelay(1000 / portTICK_PERIOD_MS);
+/***************************************************************************************************
+ * @brief Set the duty cycle in percentagae of the pwm
+ *
+ * @param duty      - duty cycle to set in percentage ex: 99.5%
+ * @param channel   - channel to set duty cycle
+ *
+ * @return void
+ * 
+ *  
+ * 1. Start with initializing LEDC module:
+ *    a. Set the timer of LEDC first, this determines the frequency and resolution of PWM.
+ *    b. Then set the LEDC channel you want to use, and bind with one of the timers.
+ *
+ * 2. You need first to install a default fade function,
+ *    then you can use fade APIs.
+  *************************************************************************************************/
+void set_PWM_duty(float duty, int channel){
+
+    int duty_cycle;
+
+    duty_cycle = (duty/100 * MAX_DUTY_CYCLE);
+
+	ledc_set_duty(ledc_channel[channel].speed_mode, ledc_channel[channel].channel, duty_cycle);
+	ledc_update_duty(ledc_channel[channel].speed_mode, ledc_channel[channel].channel);
+
 
 }
+
+/***************************************************************************************************
+ * @brief Function to set GPIO
+ *
+ * @param duty      - duty cycle to set in percentage ex: 99.5%
+ * @param channel   - channel to set duty cycle
+ *
+ * @return void
+ * 
+ *  
+ * 1. Start with initializing LEDC module:
+ *    a. Set the timer of LEDC first, this determines the frequency and resolution of PWM.
+ *    b. Then set the LEDC channel you want to use, and bind with one of the timers.
+ *
+ * 2. You need first to install a default fade function,
+ *    then you can use fade APIs.
+  *************************************************************************************************/
+
+
 
 /***************************************************************************************************
 * END OF FILE

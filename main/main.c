@@ -47,9 +47,8 @@ static char tmp_buff[64];
 * LOCALS FUNCTIONS
 ***************************************************************************************************/
 
-//---------------------------------
-static void disp_header(char *info)
-{
+
+static void disp_header(char *info){
 	TFT_fillScreen(TFT_BLACK);
 	TFT_resetclipwin();
 
@@ -69,13 +68,11 @@ static void disp_header(char *info)
 	TFT_setclipwin(0, TFT_getfontheight() + 9, tft_width - 1, tft_height - TFT_getfontheight() - 10);
 }
 
-void app_main()
-{
-	// ==== Initialize TFT ====
-	tft_init();
-
-	// ==== Initialize PWM ====
-	pwm_init();
+void app_main(){
+	
+	// ==== System Initialization ====
+	tft_init();										// TFT Init
+	pwm_init();										// PWM Init
 
 	vTaskDelay(500 / portTICK_RATE_MS);
 	printf("\r\n==============================\r\n");
