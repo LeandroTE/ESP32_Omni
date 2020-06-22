@@ -60,10 +60,13 @@
 #define MAX_DUTY_CYCLE          (8192)
 
 // ================== GPIO ==================
-#define GPIO_INPUT_IO_0     35
-#define GPIO_INPUT_IO_1     0
+#define GPIO_INPUT_IO_0     35                                                  // Button 1
+#define GPIO_INPUT_IO_1     0                                                   // Button2
 #define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_0) | (1ULL<<GPIO_INPUT_IO_1))
 #define ESP_INTR_FLAG_DEFAULT 0
+
+#define BUTTON1             0
+#define BUTTON2             35
 
 /***************************************************************************************************
 * TYPES

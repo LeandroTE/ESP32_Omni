@@ -65,7 +65,12 @@ static void gpio_task(void* arg){
     uint32_t io_num;
     while(1) {
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
-            printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
+			//printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
+			if(io_num == BUTTON1 && gpio_get_level(io_num)==1){					// Check if GPIO0 was pressed
+				printf("Button 1 pressed\n");
+			}else if(io_num == BUTTON2 && gpio_get_level(io_num)==1){			// Check if GPIO35 was pressed
+				printf("Button 2 pressed\n");
+			}
         }
     }
 }
