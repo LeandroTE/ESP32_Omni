@@ -65,6 +65,11 @@
 #define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_0) | (1ULL<<GPIO_INPUT_IO_1))
 #define ESP_INTR_FLAG_DEFAULT 0
 
+#define GPIO_OUTPUT_IO_0    25
+#define GPIO_OUTPUT_IO_1    26
+#define GPIO_OUTPUT_IO_2    27
+#define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_IO_0) | (1ULL<<GPIO_OUTPUT_IO_1) | (1ULL<<GPIO_OUTPUT_IO_2))
+
 #define BUTTON1             0
 #define BUTTON2             35
 

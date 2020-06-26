@@ -45,6 +45,7 @@
 
 static char tmp_buff[64];
 static xQueueHandle gpio_evt_queue = NULL;
+float pwm_duty[3]={0.0, 0.0, 0.0};
 
 /***************************************************************************************************
 * ISR'S
@@ -65,11 +66,20 @@ static void gpio_task(void* arg){
     uint32_t io_num;
     while(1) {
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
-			//printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
 			if(io_num == BUTTON1 && gpio_get_level(io_num)==1){					// Check if GPIO0 was pressed
 				printf("Button 1 pressed\n");
+				pwm_duty[0]+=10.0;
+				if(pwm_duty[0] >100){
+					pwm_duty[0]=100;
+				}
+				set_PWM_duty(pwm_duty[0], 0);
 			}else if(io_num == BUTTON2 && gpio_get_level(io_num)==1){			// Check if GPIO35 was pressed
 				printf("Button 2 pressed\n");
+				pwm_duty[0]-=10.0;
+				if(pwm_duty[0]<0){
+					pwm_duty[0]=0;
+				}
+				set_PWM_duty(pwm_duty[0], 0);
 			}
         }
     }
@@ -107,18 +117,16 @@ void app_main(){
 	printf("Pins used: miso=%d, mosi=%d, sck=%d, cs=%d\r\n", PIN_NUM_MISO, PIN_NUM_MOSI, PIN_NUM_CLK, PIN_NUM_CS);
 	printf("==============================\r\n\r\n");
 
-	TFT_setRotation(1);
+	TFT_setRotation(3);
 	disp_header("PRIMITUS OMNI v0.1");
 	TFT_setFont(DEFAULT_FONT, NULL);
 	int tempy = TFT_getfontheight() + 4;
-	tft_fg = TFT_ORANGE;
-	TFT_print("ESP32", 0, LASTY + tempy);
-	tft_fg = TFT_CYAN;
-	TFT_print("TFT Demo", 0, LASTY + tempy);
-	tft_fg = TFT_GREEN;
-	sprintf(tmp_buff, "Read speed: %5.2f MHz", (float)tft_max_rdclock / 1000000.0);
+	tft_fg = TFT_DARKCYAN;
+	sprintf(tmp_buff, "PWM duty cycle : %3.1f %%", (float)pwm_duty[0]);
 	TFT_print(tmp_buff, 0, LASTY + tempy);
-
+	gpio_set_level(GPIO_OUTPUT_IO_0, 0);
+	gpio_set_level(GPIO_OUTPUT_IO_1, 0);
+	gpio_set_level(GPIO_OUTPUT_IO_2, 0);
 }
 
 /***************************************************************************************************

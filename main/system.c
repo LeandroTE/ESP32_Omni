@@ -223,7 +223,7 @@ void set_PWM_duty(float duty, int channel){
     int duty_cycle;
 
     duty_cycle = (duty/100 * MAX_DUTY_CYCLE);
-
+    printf("Duty cycle = %d\n",duty_cycle);
 	ledc_set_duty(ledc_channel[channel].speed_mode, ledc_channel[channel].channel, duty_cycle);
 	ledc_update_duty(ledc_channel[channel].speed_mode, ledc_channel[channel].channel);
 
@@ -245,7 +245,16 @@ void GPIO_Init(gpio_config_t io_conf){
     io_conf.pin_bit_mask = GPIO_INPUT_PIN_SEL;                                  //bit mask of the pins, use GPIO35/0 here
     io_conf.mode = GPIO_MODE_INPUT;                                             //set as input mode
     io_conf.pull_up_en = 1;                                                     //enable pull-up mode
-    gpio_config(&io_conf);
+    gpio_config(&io_conf);                                                      //configure GPIO with the given settings
+
+        
+    io_conf.mode = GPIO_MODE_OUTPUT;                                            //set as output mode
+    
+    io_conf.pin_bit_mask = GPIO_OUTPUT_PIN_SEL;                                 //bit mask of the pins that you
+                                                                                // want to set,e.g.GPIO25/26/27
+    io_conf.pull_down_en = 0;                                                   //disable pull-down mode
+    io_conf.pull_up_en = 0;                                                     //disable pull-up mode
+    gpio_config(&io_conf);                                                      //configure GPIO with the given settings
 
     gpio_set_intr_type(GPIO_INPUT_IO_0, GPIO_INTR_ANYEDGE);                     //change gpio intrrupt type for one pin
 
