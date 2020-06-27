@@ -36,3 +36,4 @@ local/
 **/.DS_Store
 mkspiffs/
 Documents
+.vscode
