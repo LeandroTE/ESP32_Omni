@@ -27,6 +27,7 @@
 
 #include "driver/ledc.h"
 #include "driver/gpio.h"
+#include "driver/uart.h"
 
 /***************************************************************************************************
 * COSNTANTS
@@ -57,7 +58,7 @@
 #define LEDC_LS_CH3_CHANNEL    LEDC_CHANNEL_3
 
 #define LEDC_TEST_CH_NUM       (4)
-#define MAX_DUTY_CYCLE          (8192)
+#define MAX_DUTY_CYCLE         (8192)
 
 // ================== GPIO ==================
 #define GPIO_INPUT_IO_0     35                                                  // Button 1
@@ -68,10 +69,17 @@
 #define GPIO_OUTPUT_IO_0    25
 #define GPIO_OUTPUT_IO_1    26
 #define GPIO_OUTPUT_IO_2    27
-#define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_IO_0) | (1ULL<<GPIO_OUTPUT_IO_1) | (1ULL<<GPIO_OUTPUT_IO_2))
+#define GPIO_OUTPUT_IO_3    17
+#define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_IO_0) | (1ULL<<GPIO_OUTPUT_IO_1) | (1ULL<<GPIO_OUTPUT_IO_2) | (1ULL<<GPIO_OUTPUT_IO_3))
 
 #define BUTTON1             0
 #define BUTTON2             35
+
+// ================== UART ==================
+static const int RX_BUF_SIZE = 1024;
+
+#define TXD_PIN (GPIO_NUM_22)
+#define RXD_PIN (GPIO_NUM_21)
 
 /***************************************************************************************************
 * TYPES
@@ -95,6 +103,9 @@ void set_PWM_duty(float duty, int channel);
 
 // ================== GPIO ==================
 void GPIO_Init(gpio_config_t io_conf);
+
+// ================== UART ==================
+void uart_init();
 
 
 /***************************************************************************************************

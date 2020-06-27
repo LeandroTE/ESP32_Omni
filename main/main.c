@@ -27,6 +27,7 @@
 #include "driver/ledc.h"
 #include "driver/gpio.h"
 #include "display.h"
+#include "esp_log.h"
 
 /***************************************************************************************************
 * COSNTANTS
@@ -92,6 +93,41 @@ static void gpio_task(void* arg){
     }
 }
 
+int sendData(const char* logName, const char* data)
+{
+    const int len = strlen(data);
+    const int txBytes = uart_write_bytes(UART_NUM_1, data, len);
+    ESP_LOGI(logName, "Wrote %d bytes", txBytes);
+    return txBytes;
+}
+
+
+static void tx_task(void *arg)
+{
+    static const char *TX_TASK_TAG = "TX_TASK";
+    esp_log_level_set(TX_TASK_TAG, ESP_LOG_INFO);
+    while (1) {
+        sendData(TX_TASK_TAG, "Hello world");
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
+}
+
+static void rx_task(void *arg)
+{
+    static const char *RX_TASK_TAG = "RX_TASK";
+    esp_log_level_set(RX_TASK_TAG, ESP_LOG_INFO);
+    uint8_t* data = (uint8_t*) malloc(RX_BUF_SIZE+1);
+    while (1) {
+        const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
+        if (rxBytes > 0) {
+            data[rxBytes] = 0;
+            ESP_LOGI(RX_TASK_TAG, "Read %d bytes: '%s'", rxBytes, data);
+            ESP_LOG_BUFFER_HEXDUMP(RX_TASK_TAG, data, rxBytes, ESP_LOG_INFO);
+        }
+    }
+    free(data);
+}
+
 /***************************************************************************************************
 * LOCALS FUNCTIONS
 ***************************************************************************************************/
@@ -104,6 +140,7 @@ void app_main(){
 	tft_init();																	// TFT Init
 	pwm_init();																	// PWM Init
     GPIO_Init(io_conf);															// GPIO Init
+	uart_init();																// UART Config
 	
 	// ==== Task Creation ====
     gpio_evt_queue = xQueueCreate(10, sizeof(uint32_t));						//create a queue to handle gpio event from isr
@@ -139,6 +176,9 @@ void app_main(){
 	gpio_set_level(GPIO_OUTPUT_IO_0, 0);
 	gpio_set_level(GPIO_OUTPUT_IO_1, 0);
 	gpio_set_level(GPIO_OUTPUT_IO_2, 0);
+
+	xTaskCreate(rx_task, "uart_rx_task", 1024*2, NULL, configMAX_PRIORITIES, NULL);
+    xTaskCreate(tx_task, "uart_tx_task", 1024*2, NULL, configMAX_PRIORITIES-1, NULL);
 }
 
 /***************************************************************************************************
