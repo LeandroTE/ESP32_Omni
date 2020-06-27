@@ -26,6 +26,7 @@
 #include "spiffs_vfs.h"
 #include "driver/ledc.h"
 #include "driver/gpio.h"
+#include "display.h"
 
 /***************************************************************************************************
 * COSNTANTS
