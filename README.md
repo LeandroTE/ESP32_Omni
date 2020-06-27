@@ -20,12 +20,10 @@ This project use the following projects as references:
 ## Hardware Description
 | Name                  | Pin    |
 | ----------            | ------ |
-| TFT_MISO              | N/A    |
 | TFT_MOSI              | 19     |
 | TFT_SCLK              | 18     |
 | TFT_CS                | 5      |
 | TFT_DC                | 16     |
-| TFT_RST               | N/A    |
 | TFT_BL                | 4      |
 | PWM1 (EN1)            | 21     |
 | PWM2 (EN2)            | 22     |
@@ -37,7 +35,7 @@ This project use the following projects as references:
 | PH2                   | 26     |
 | PH3                   | 27     |
 | TX Lidar              | 2      |
-| RX Lidar              | 17      |
+| RX Lidar              | 17     |
 
 
 

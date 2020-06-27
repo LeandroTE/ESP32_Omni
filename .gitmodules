@@ -1,0 +1,3 @@
+[submodule "OmniHardware"]
+	path = OmniHardware
+	url = git@github.com:LeandroTE/OmniHardware.git
