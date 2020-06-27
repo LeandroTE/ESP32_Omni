@@ -34,7 +34,7 @@
 /***************************************************************************************************
 * MACROS
 ***************************************************************************************************/
-
+#define FIRST_LINE 5
 /***************************************************************************************************
 * TYPES
 ***************************************************************************************************/
@@ -45,7 +45,7 @@
 
 static char tmp_buff[64];
 static xQueueHandle gpio_evt_queue = NULL;
-float pwm_duty[3]={0.0, 0.0, 0.0};
+float pwm_duty[4]={0.0, 0.0, 0.0, 0.0};
 
 /***************************************************************************************************
 * ISR'S
@@ -67,19 +67,25 @@ static void gpio_task(void* arg){
     while(1) {
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
 			if(io_num == BUTTON1 && gpio_get_level(io_num)==1){					// Check if GPIO0 was pressed
-				printf("Button 1 pressed\n");
+				printf("Button 1 pressed.\n");
 				pwm_duty[0]+=10.0;
 				if(pwm_duty[0] >100){
 					pwm_duty[0]=100;
 				}
 				set_PWM_duty(pwm_duty[0], 0);
+				sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);
+				TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
+				TFT_print(tmp_buff, 0, FIRST_LINE);
 			}else if(io_num == BUTTON2 && gpio_get_level(io_num)==1){			// Check if GPIO35 was pressed
-				printf("Button 2 pressed\n");
+				printf("Button 2 pressed.\n");
 				pwm_duty[0]-=10.0;
 				if(pwm_duty[0]<0){
 					pwm_duty[0]=0;
 				}
 				set_PWM_duty(pwm_duty[0], 0);
+				sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);
+				TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
+				TFT_print(tmp_buff, 0, FIRST_LINE);				
 			}
         }
     }
@@ -114,16 +120,21 @@ void app_main(){
 	printf("\r\n==============================\r\n");
 	printf("PRIMITUS OMNI, LEANDRO 06/2020\r\n");
 	printf("==============================\r\n");
-	printf("Pins used: miso=%d, mosi=%d, sck=%d, cs=%d\r\n", PIN_NUM_MISO, PIN_NUM_MOSI, PIN_NUM_CLK, PIN_NUM_CS);
-	printf("==============================\r\n\r\n");
 
 	TFT_setRotation(3);
 	disp_header("PRIMITUS OMNI v0.1");
 	TFT_setFont(DEFAULT_FONT, NULL);
 	int tempy = TFT_getfontheight() + 4;
-	tft_fg = TFT_DARKCYAN;
-	sprintf(tmp_buff, "PWM duty cycle : %3.1f %%", (float)pwm_duty[0]);
-	TFT_print(tmp_buff, 0, LASTY + tempy);
+	printf("TFT_height: %d\n",TFT_getfontheight());
+	tft_fg = TFT_GREENYELLOW;
+	sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);
+	TFT_print(tmp_buff, 0, FIRST_LINE);
+	sprintf(tmp_buff, "PWM 2: %3.1f %%", (float)pwm_duty[1]);
+	TFT_print(tmp_buff, 0, FIRST_LINE + tempy);
+	sprintf(tmp_buff, "PWM 3: %3.1f %%", (float)pwm_duty[2]);
+	TFT_print(tmp_buff, 0, FIRST_LINE + 2 * tempy);
+	sprintf(tmp_buff, "PWM 4: %3.1f %%", (float)pwm_duty[3]);
+	TFT_print(tmp_buff, 0, FIRST_LINE + 3 * tempy);
 	gpio_set_level(GPIO_OUTPUT_IO_0, 0);
 	gpio_set_level(GPIO_OUTPUT_IO_1, 0);
 	gpio_set_level(GPIO_OUTPUT_IO_2, 0);

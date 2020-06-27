@@ -137,6 +137,7 @@ void tft_init(){
     printf("Graphics demo started\r\n");
     printf("---------------------\r\n");
 
+    tft_bg = TFT_BLACK;
     tft_font_rotate = 0;
     tft_text_wrap = 0;
     tft_font_transparent = 0;
