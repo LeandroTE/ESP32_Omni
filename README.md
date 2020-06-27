@@ -11,7 +11,7 @@ https://docs.espressif.com/projects/esp-idf/en/v4.0-beta1/get-started/index.html
 
 **This repository contains the code to control the Primitus Omni Robot, and is based in the the board TTGO t-display**
 
-*The TFT Libraty is based on the project jeremeyjh and loboris
+*This project use the following projects as references
     *https://github.com/jeremyjh/ESP32_TFT_library
     *https://github.com/loboris/ESP32_TFT_library
 
