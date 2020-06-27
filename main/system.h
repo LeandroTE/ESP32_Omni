@@ -28,6 +28,7 @@
 #include "driver/ledc.h"
 #include "driver/gpio.h"
 #include "driver/uart.h"
+#include "esp_log.h"
 
 /***************************************************************************************************
 * COSNTANTS
@@ -106,7 +107,7 @@ void GPIO_Init(gpio_config_t io_conf);
 
 // ================== UART ==================
 void uart_init();
-
+int sendData(const char* logName, const char* data);
 
 /***************************************************************************************************
 * END OF FILE
