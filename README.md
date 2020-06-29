@@ -39,5 +39,19 @@ This project use the following projects as references:
 | TX Lidar              | 2      |
 | RX Lidar              | 17     |
 
+## Format syles
+---
+
+This code use the following clang-format styles
+
+BasedOnStyle: Google
+IndentWidth: 4 
+AlignTrailingComments: true
+ColumnLimit: 120
+SpacesBeforeTrailingComments: 8
+ReflowComments: true
+SortIncludes: true
+
+
 
 
