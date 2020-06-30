@@ -72,7 +72,8 @@ static void gpio_task(void *arg) {
     while (1) {
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             if (io_num == BUTTON1 && gpio_get_level(io_num) == 1) {              // Check if GPIO0 was pressed
-                if (xTaskGetTickCount() - button1LastTimePressed > 100) {        // Simple debounce cnt using RTOS Ticks
+                if (xTaskGetTickCount() - button1LastTimePressed > 100) {        // Simple debounce cnt using RTOS
+                                                                                 // Ticks
                     button1LastTimePressed = xTaskGetTickCount();
                     printf("Button 1 pressed.\n");
                     pwm_duty[0] += 10.0;
@@ -85,7 +86,8 @@ static void gpio_task(void *arg) {
                     TFT_print(tmp_buff, 0, FIRST_LINE);
                 }
             } else if (io_num == BUTTON2 && gpio_get_level(io_num) == 1) {        // Check if GPIO35 was pressed
-                if (xTaskGetTickCount() - button2LastTimePressed > 100) {        // Simple debounce cnt using RTOS Ticks
+                if (xTaskGetTickCount() - button2LastTimePressed > 100) {         // Simple debounce cnt using RTOS
+                                                                                  // Ticks
                     button2LastTimePressed = xTaskGetTickCount();
                     printf("Button 2 pressed.\n");
                     // Button2 code
@@ -133,7 +135,8 @@ void app_main() {
     uart_init();               // UART Config
 
     // ==== Queue Creation ====
-    gpio_evt_queue = xQueueCreate(10, sizeof(uint32_t));        // create a queue to handle gpio event from isr
+    gpio_evt_queue = xQueueCreate(10,
+                                  sizeof(uint32_t));        // create a queue to handle gpio event from isr
 
     // ==== Task Creation ====
     xTaskCreate(gpio_task, "gpio_task", 2048, NULL, 10,
