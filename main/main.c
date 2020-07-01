@@ -72,22 +72,22 @@ static void gpio_task(void *arg) {
     while (1) {
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             if (io_num == BUTTON1 && gpio_get_level(io_num) == 1) {              // Check if GPIO0 was pressed
-                if (xTaskGetTickCount() - button1LastTimePressed > 100) {        // Simple debounce cnt using RTOS
-                                                                                 // Ticks
+                if (xTaskGetTickCount() - button1LastTimePressed > 100) {        // Simple debounce cnt using RTOS ticks
                     button1LastTimePressed = xTaskGetTickCount();
                     printf("Button 1 pressed.\n");
-                    pwm_duty[0] += 10.0;
-                    if (pwm_duty[0] > 100) {
-                        pwm_duty[0] = 100;
+                    if (pwm_duty[0] == 70.0) {
+                        pwm_duty[0] = 0.0;        // Set channel 0 (PWM Lidar) to 0% duty cycle
+                    } else {
+                        pwm_duty[0] = 70.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
                     }
+
                     set_PWM_duty(pwm_duty[0], 0);
-                    sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);
+                    sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);        // Update diplay
                     TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
                     TFT_print(tmp_buff, 0, FIRST_LINE);
                 }
             } else if (io_num == BUTTON2 && gpio_get_level(io_num) == 1) {        // Check if GPIO35 was pressed
-                if (xTaskGetTickCount() - button2LastTimePressed > 100) {         // Simple debounce cnt using RTOS
-                                                                                  // Ticks
+                if (xTaskGetTickCount() - button2LastTimePressed > 100) {        // Simple debounce cnt using RTOS Ticks
                     button2LastTimePressed = xTaskGetTickCount();
                     printf("Button 2 pressed.\n");
                     // Button2 code
@@ -101,7 +101,7 @@ static void tx_task(void *arg) {
     static const char *TX_TASK_TAG = "TX_TASK";
     esp_log_level_set(TX_TASK_TAG, ESP_LOG_INFO);
     while (1) {
-        sendData(TX_TASK_TAG, "Hello world");
+        // sendData(TX_TASK_TAG, "Hello world");
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
@@ -174,6 +174,12 @@ void app_main() {
     gpio_set_level(GPIO_OUTPUT_IO_0, 0);
     gpio_set_level(GPIO_OUTPUT_IO_1, 0);
     gpio_set_level(GPIO_OUTPUT_IO_2, 0);
+
+    pwm_duty[0] = 70.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
+    set_PWM_duty(pwm_duty[0], 0);
+    sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);        // Update diplay
+    TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
+    TFT_print(tmp_buff, 0, FIRST_LINE);
 }
 
 /***********************************************************************************************************************

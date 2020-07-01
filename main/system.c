@@ -246,7 +246,7 @@ void uart_init(void) {
 }
 
 /***********************************************************************************************************************
- * @brief Set the duty cycle in percentagae of the pwm
+ * @brief Send data to uart
  *
  * @param logName       - log name
  * @param data          - data to be send via uart
