@@ -1,6 +1,7 @@
 
 # Software to control Primitus Omni Robot
 
+* More detail in [hackday.io] (https://hackaday.io/project/173420-primitus-omni)
 ---
 
 **This library must be built with the esp-idf release/v4.0 branch.**

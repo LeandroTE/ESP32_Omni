@@ -70,7 +70,7 @@
 #define GPIO_OUTPUT_IO_1 26
 #define GPIO_OUTPUT_IO_2 27
 #define GPIO_OUTPUT_IO_3 17
-#define GPIO_OUTPUT_PIN_SEL \
+#define GPIO_OUTPUT_PIN_SEL                                                                                            \
     ((1ULL << GPIO_OUTPUT_IO_0) | (1ULL << GPIO_OUTPUT_IO_1) | (1ULL << GPIO_OUTPUT_IO_2) | (1ULL << GPIO_OUTPUT_IO_3))
 
 #define BUTTON1 0
@@ -106,7 +106,7 @@ void GPIO_Init(gpio_config_t io_conf);
 
 // ================== UART ==================
 void uart_init();
-int sendData(const char* logName, const char* data);
+int sendData(const char *data);
 
 /***********************************************************************************************************************
  * END OF FILE
