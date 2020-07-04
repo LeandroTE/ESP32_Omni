@@ -17,6 +17,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "RPLidar.h"
 #include "display.h"
 #include "driver/gpio.h"
 #include "driver/ledc.h"
@@ -90,6 +91,7 @@ static void gpio_task(void *arg) {
                 if (xTaskGetTickCount() - button2LastTimePressed > 100) {        // Simple debounce cnt using RTOS Ticks
                     button2LastTimePressed = xTaskGetTickCount();
                     printf("Button 2 pressed.\n");
+                    sendRequest(RPLIDAR_CMD_GET_DEVICE_INFO, NULL, 0);
                     // Button2 code
                 }
             }
@@ -98,9 +100,8 @@ static void gpio_task(void *arg) {
 }
 
 static void tx_task(void *arg) {
-    static const char *TX_TASK_TAG = "TX_TASK";
-    esp_log_level_set(TX_TASK_TAG, ESP_LOG_INFO);
     while (1) {
+        //sendRequest(RPLIDAR_CMD_STOP, NULL, 0);
         // sendData(TX_TASK_TAG, "Hello world");
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
@@ -114,7 +115,7 @@ static void rx_task(void *arg) {
         const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
         if (rxBytes > 0) {
             data[rxBytes] = 0;
-            ESP_LOGI(RX_TASK_TAG, "Read %d bytes: '%s'", rxBytes, data);
+            ESP_LOGI(RX_TASK_TAG, "Read %d bytes", rxBytes);
             ESP_LOG_BUFFER_HEXDUMP(RX_TASK_TAG, data, rxBytes, ESP_LOG_INFO);
         }
     }

@@ -191,7 +191,6 @@ void set_PWM_duty(float duty, int channel) {
     int duty_cycle;
 
     duty_cycle = (duty / 100 * MAX_DUTY_CYCLE);
-    printf("Duty cycle = %d\n", duty_cycle);
     ledc_set_duty(ledc_channel[channel].speed_mode, ledc_channel[channel].channel, duty_cycle);
     ledc_update_duty(ledc_channel[channel].speed_mode, ledc_channel[channel].channel);
 }
@@ -254,7 +253,7 @@ void uart_init(void) {
  * @return void
  *
  **********************************************************************************************************************/
-int sendData( const char* data) {
+int sendData(const char *data) {
     int len = strlen(data);
     const int txBytes = uart_write_bytes(UART_NUM_1, data, len);
     return txBytes;

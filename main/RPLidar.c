@@ -36,43 +36,41 @@
 /***********************************************************************************************************************
  * @brief Send command to RPLidar via uart
  *
- * @param duty      - duty cycle to set in percentage ex: 99.5%
- * @param channel   - channel to set duty cycle
- *
- * @return void
+ * @param cmd           - cmd to be sent
+ * @param payload       - pointer to payload
+ * @param payloadsize   - payload size
+ * @return              - result (uint8)
  *
  **********************************************************************************************************************/
-uint32_t sendCommand(uint8_t cmd, const void *payload, size_t payloadsize) {
+uint32_t sendRequest(uint8_t cmd, const void *payload, size_t payloadsize) {
     rplidar_cmd_packet_t RPLidar_header;
-    
+    uint16_t packetSize = 0;
     uint8_t checksum = 0;
 
     if (payloadsize && payload) {
         cmd |= RPLIDAR_CMDFLAG_HAS_PAYLOAD;
     }
 
-    RPLidar_header.syncByte = RPLIDAR_CMD_SYNC_BYTE;
-    RPLidar_header.cmd_flag = cmd;
-
-    //uart_write_bytes(UART_NUM_1, (char *)RPLidar_header, 2);        // send header first
+    RPLidar_header.syncByte = RPLIDAR_CMD_SYNC_BYTE;        // Load Start Flag in the resquest packet struct
+    RPLidar_header.cmd_flag = cmd;                          // Load the cmd to resquest strcut
+    packetSize += 2;                                        // Increment the packet size counter
 
     if (cmd & RPLIDAR_CMDFLAG_HAS_PAYLOAD) {
+        RPLidar_header.size = payloadsize;        // Load payload size
+        packetSize++;
         checksum ^= RPLIDAR_CMD_SYNC_BYTE;
         checksum ^= cmd;
-        checksum ^= (payloadsize & 0xFF);
+        checksum ^= (payloadsize & 0xFF);        // Initialize checksum with first 3 bytes
 
-        for (size_t pos = 0; pos < payloadsize; ++pos) {        // calc checksum
+        for (size_t pos = 0; pos < payloadsize; ++pos) {        // Upgrade checksum with payload
             checksum ^= ((uint8_t *)payload)[pos];
+            RPLidar_header.data[pos] = ((uint8_t *)payload)[pos];        // Load payload in packet strcutures
+            packetSize++;
         }
-
-        uint8_t sizebyte = payloadsize;        // send size
-        //uart_write_bytes(UART_NUM_1, &sizebyte, 1);
-
-        //uart_write_bytes(UART_NUM_1, &payload, sizebyte);        // send payload
-
-        //uart_write_bytes(UART_NUM_1, &checksum, 1);        // send checksum
+        RPLidar_header.checksum = checksum;        // Load checksum in packet structure
+        packetSize++;
     }
-
+    uart_write_bytes(UART_NUM_1, (char *)&RPLidar_header, packetSize);        // Send packet struture via UART
     return RESULT_OK;
 }
 
