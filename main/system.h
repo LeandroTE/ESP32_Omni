@@ -77,7 +77,7 @@
 #define BUTTON2 35
 
 // ================== UART ==================
-static const int RX_BUF_SIZE = 1024;
+static const int RX_BUF_SIZE = 500;
 
 #define TXD_PIN (GPIO_NUM_22)
 #define RXD_PIN (GPIO_NUM_21)

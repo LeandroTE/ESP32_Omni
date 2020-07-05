@@ -122,6 +122,24 @@ typedef struct rplidar_response_device_health_t {
     uint16_t error_code;
 } rplidar_response_device_health_t;
 
+enum lidarProtocolStates {              // Lidar possible states
+    IDLE,                               // Protocol state in idle
+    WAITING_RESPONSE_DESCRIPTOR,        // Waiting for getting info response
+
+};
+
+enum lidarOperationStates {        // Lidar possible states
+    IDLE_OP,                       // Non initialize when started
+    NON_INIT,                      // Idle state
+    WAITING_GET_INFO,              // Waiting for getting info response
+
+};
+
+struct lidarStateMachine {        // Maquina de estado da interface de comunicação
+    enum lidarProtocolStates protocolState;
+    enum lidarOperationStates operationState;
+};
+
 /***********************************************************************************************************************
  * GLOBALS VARIABLES
  **********************************************************************************************************************/
@@ -131,6 +149,8 @@ typedef struct rplidar_response_device_health_t {
  **********************************************************************************************************************/
 
 uint32_t sendRequest(uint8_t cmd, const void *payload, size_t payloadsize);
+void lidarBeginStateMachine(struct lidarStateMachine *stateMachine);
+void lidarSendByteToStateMachine(uint8_t byte, struct lidarStateMachine *stateMachine);
 
 /***********************************************************************************************************************
  * END OF FILE

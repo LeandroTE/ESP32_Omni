@@ -37,6 +37,12 @@
  * MACROS
  **********************************************************************************************************************/
 #define FIRST_LINE 5
+#define RX_BUFFER_SZ 500
+
+// ==== TASK PRIORITIES ====
+#define GPIO_TASK_PRIORITY 7
+#define RX_TASK_PRIORITY 6
+#define LIDAR_TASK_PRIORITY 5
 /***********************************************************************************************************************
  * TYPES
  **********************************************************************************************************************/
@@ -48,10 +54,15 @@
 static char tmp_buff[64];
 float pwm_duty[4] = {0.0, 0.0, 0.0, 0.0};
 
+struct lidarStateMachine lidarStateMachine;
+
 // ==== Task Handle ====
 TaskHandle_t gpio_taskHandle = NULL;
-// ==== Queu Handle ====
+TaskHandle_t lidar_taskHandle = NULL;
+
+// ==== Queue Handle ====
 static xQueueHandle gpio_evt_queue = NULL;
+static xQueueHandle rx_buffer_queue = NULL;
 
 /***********************************************************************************************************************
  * ISR'S
@@ -91,7 +102,7 @@ static void gpio_task(void *arg) {
                 if (xTaskGetTickCount() - button2LastTimePressed > 100) {        // Simple debounce cnt using RTOS Ticks
                     button2LastTimePressed = xTaskGetTickCount();
                     printf("Button 2 pressed.\n");
-                    sendRequest(RPLIDAR_CMD_FORCE_SCAN, NULL, 0);
+                    sendRequest(RPLIDAR_CMD_GET_DEVICE_INFO, NULL, 0);
                     // Button2 code
                 }
             }
@@ -101,17 +112,37 @@ static void gpio_task(void *arg) {
 
 static void rx_task(void *arg) {
     static const char *RX_TASK_TAG = "RX_TASK";
+    int i = 0;
     esp_log_level_set(RX_TASK_TAG, ESP_LOG_INFO);
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
     while (1) {
-        const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
+        const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 50 / portTICK_RATE_MS);
+
         if (rxBytes > 0) {
-            data[rxBytes] = 0;
+            for (i = 0; i < rxBytes; i++) {
+                xQueueSend(rx_buffer_queue, &data[i], (TickType_t)0);        // Send bytes to queue buffer
+            }
+
             ESP_LOGI(RX_TASK_TAG, "Read %d bytes", rxBytes);
             ESP_LOG_BUFFER_HEXDUMP(RX_TASK_TAG, data, rxBytes, ESP_LOG_INFO);
+            vTaskResume(lidar_taskHandle);        // Wake Lidar task to treat rx buffer
         }
     }
     free(data);
+}
+
+static void lidar_task(void *arg) {
+    char bufferTemp[1];
+    while (1) {
+        vTaskSuspend(lidar_taskHandle);
+        printf("Lidar Processing Task\n");
+        printf("Messages waiting: %d\n", uxQueueMessagesWaiting(rx_buffer_queue));
+        while (uxQueueMessagesWaiting(rx_buffer_queue) != 0) {                        // Read all bytes in Queue
+            xQueueReceive(rx_buffer_queue, (void *)bufferTemp, (TickType_t)5);        // Read one byte from queue
+            lidarSendByteToStateMachine(bufferTemp[0], &lidarStateMachine);           // Send to lidar state machine
+            printf("Messages waiting: %d\n", uxQueueMessagesWaiting(rx_buffer_queue));
+        }
+    }
 }
 
 /***********************************************************************************************************************
@@ -128,13 +159,15 @@ void app_main() {
     uart_init();               // UART Config
 
     // ==== Queue Creation ====
-    gpio_evt_queue = xQueueCreate(10,
-                                  sizeof(uint32_t));        // create a queue to handle gpio event from isr
+    gpio_evt_queue = xQueueCreate(10, sizeof(uint32_t));        // create a queue to handle gpio event from isr
+    rx_buffer_queue = xQueueCreate(RX_BUFFER_SZ, sizeof(uint8_t));        // Create uart rx buffer
 
     // ==== Task Creation ====
-    xTaskCreate(gpio_task, "gpio_task", 2048, NULL, 10,
-                gpio_taskHandle);        // start gpio task
-    xTaskCreate(rx_task, "uart_rx_task", 1024 * 2, NULL, configMAX_PRIORITIES, NULL);
+    xTaskCreate(gpio_task, "gpio_task", configMINIMAL_STACK_SIZE, NULL, GPIO_TASK_PRIORITY,
+                &gpio_taskHandle);                                                       // Create gpio task
+    xTaskCreate(rx_task, "uart_rx_task", 1024 * 2, NULL, RX_TASK_PRIORITY, NULL);        // Create RX Task
+    xTaskCreate(lidar_task, "lidar_task", 1024 * 2, NULL, LIDAR_TASK_PRIORITY,
+                &lidar_taskHandle);        // Create Lidar task
 
     // ==== ISR inicialization ====
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);        // install gpio isr service
@@ -144,6 +177,8 @@ void app_main() {
                          (void *)GPIO_INPUT_IO_1);        // hook isr handler for specific gpio pin
 
     // ==== Application configuration ====
+    lidarBeginStateMachine(&lidarStateMachine);        // Initialize Lidar state machinne
+
     vTaskDelay(500 / portTICK_RATE_MS);
     printf("\r\n==============================\r\n");
     printf("PRIMITUS OMNI, LEANDRO 06/2020\r\n");
@@ -153,7 +188,6 @@ void app_main() {
     disp_header("PRIMITUS OMNI v0.1");
     TFT_setFont(DEFAULT_FONT, NULL);
     int tempy = TFT_getfontheight() + 4;
-    printf("TFT_height: %d\n", TFT_getfontheight());
     tft_fg = TFT_GREENYELLOW;
     sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);
     TFT_print(tmp_buff, 0, FIRST_LINE);
@@ -167,7 +201,7 @@ void app_main() {
     gpio_set_level(GPIO_OUTPUT_IO_1, 0);
     gpio_set_level(GPIO_OUTPUT_IO_2, 0);
 
-    pwm_duty[0] = 80.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
+    pwm_duty[0] = 00.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
     set_PWM_duty(pwm_duty[0], 0);
     sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);        // Update diplay
     TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
