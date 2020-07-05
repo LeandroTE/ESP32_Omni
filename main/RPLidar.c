@@ -107,6 +107,7 @@ void lidarSendByteToStateMachine(uint8_t byte, struct lidarStateMachine *stateMa
         byte == RPLIDAR_ANS_SYNC_BYTE1) {        // Check if fisrt sync byte
         headerbuf[recvPos++] = byte;
         stateMachine->protocolState = WAITING_SYNC_BYTE2;
+        printf("Response Descriptor decode: \n");
         printf("Response header sync 1: %x\n", response_descriptor.syncByte1);
     } else if (stateMachine->protocolState == WAITING_SYNC_BYTE2 &&
                byte == RPLIDAR_ANS_SYNC_BYTE2) {        // Check if second sync byte
@@ -121,18 +122,53 @@ void lidarSendByteToStateMachine(uint8_t byte, struct lidarStateMachine *stateMa
             printf("Data Response Length: %d\n", response_descriptor.size);
             printf("Send Mode: %d\n", response_descriptor.subType);
         }
-    } else if (stateMachine->protocolState == WAITTING_DATA_TYPE) { // Waiting for data type
+    } else if (stateMachine->protocolState == WAITTING_DATA_TYPE) {        // Waiting for data type
         headerbuf[recvPos++] = byte;
         stateMachine->protocolState = WAITING_FOR_REPONSE;
-        // Debug: erease later
+        // Debug: erase later
         printf("Data Type: %x\n", response_descriptor.type);
         printf("Response Descriptor data: ");
         for (int i = 0; i < sizeof(response_descriptor); i++) {
             printf("%02x ", (unsigned int)((char *)&response_descriptor)[i]);
         }
         printf("\n");
-    }else{
+        return;
+    }
 
+    // ==== Response date ====
+    headerbuf = (uint8_t *)&stateMachine->lidarConfig;        // Get point for config info
+    if (stateMachine->protocolState == WAITING_FOR_REPONSE &&
+        stateMachine->operationState == WAITING_GET_INFO) {        // Decode get info response
+        recvPos = 0;                                               // Reset pointer counter
+        headerbuf[recvPos++] = byte;                               // Read first byte from responsa data
+        stateMachine->protocolState = READING_RESPONSE;            // Set state to receiving data
+        // printf("Received byte in state machine: %x\n", byte);
+        // printf("Response descriptor size: %d\n", response_descriptor.size);
+        // printf("recvPos: %d\n", recvPos);
+    } else if (stateMachine->protocolState == READING_RESPONSE &&
+               stateMachine->operationState == WAITING_GET_INFO) {        // Reading data from Get Info response
+        // printf("Received byte in state machine: %x\n", byte);
+        // printf("recvPos: %d\n", recvPos);
+        headerbuf[recvPos++] = byte;        // Read  responsa data
+        if (recvPos == 20) {                // After received last byte set state machine to idle
+            stateMachine->protocolState = IDLE;
+            stateMachine->operationState = IDLE_OP;
+            printf("\r\n==============================\r\n");
+            printf("\nResponse data decode: \n");
+            printf("Model: %d\n", stateMachine->lidarConfig.model);        // Print model number
+            printf("FW v%d.%d\n", stateMachine->lidarConfig.firmware_version,
+                   stateMachine->lidarConfig.firmware_revision);                       // Print FW ver X.Y
+            printf("HW ver v%d\n", stateMachine->lidarConfig.hardware_version);        // Print HE version
+            printf("Serial number: ");
+            for (int i = 0; i < 16; i++) {
+                printf("%X", stateMachine->lidarConfig.serialnum[i]);
+            }
+            printf("\nResponse data: ");
+            for (int i = 0; i < sizeof(stateMachine->lidarConfig); i++) {
+                printf("%02x ", (unsigned int)((char *)&stateMachine->lidarConfig)[i]);
+            }
+            printf("\n");
+        }
     }
 }
 

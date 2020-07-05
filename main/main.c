@@ -122,6 +122,7 @@ static void rx_task(void *arg) {
             for (i = 0; i < rxBytes; i++) {
                 xQueueSend(rx_buffer_queue, &data[i], (TickType_t)0);        // Send bytes to queue buffer
             }
+            printf("\r\n==============================\r\n");
             ESP_LOGI(RX_TASK_TAG, "Read %d bytes", rxBytes);
             ESP_LOG_BUFFER_HEXDUMP(RX_TASK_TAG, data, rxBytes, ESP_LOG_INFO);
             printf("\r\n==============================\r\n");
