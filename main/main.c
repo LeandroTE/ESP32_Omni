@@ -76,10 +76,10 @@ static void gpio_task(void *arg) {
                 if (xTaskGetTickCount() - button1LastTimePressed > 100) {        // Simple debounce cnt using RTOS ticks
                     button1LastTimePressed = xTaskGetTickCount();
                     printf("Button 1 pressed.\n");
-                    if (pwm_duty[0] == 70.0) {
+                    if (pwm_duty[0] == 80.0) {
                         pwm_duty[0] = 0.0;        // Set channel 0 (PWM Lidar) to 0% duty cycle
                     } else {
-                        pwm_duty[0] = 70.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
+                        pwm_duty[0] = 80.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
                     }
 
                     set_PWM_duty(pwm_duty[0], 0);
@@ -91,19 +91,11 @@ static void gpio_task(void *arg) {
                 if (xTaskGetTickCount() - button2LastTimePressed > 100) {        // Simple debounce cnt using RTOS Ticks
                     button2LastTimePressed = xTaskGetTickCount();
                     printf("Button 2 pressed.\n");
-                    sendRequest(RPLIDAR_CMD_GET_DEVICE_INFO, NULL, 0);
+                    sendRequest(RPLIDAR_CMD_FORCE_SCAN, NULL, 0);
                     // Button2 code
                 }
             }
         }
-    }
-}
-
-static void tx_task(void *arg) {
-    while (1) {
-        //sendRequest(RPLIDAR_CMD_STOP, NULL, 0);
-        // sendData(TX_TASK_TAG, "Hello world");
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -143,7 +135,6 @@ void app_main() {
     xTaskCreate(gpio_task, "gpio_task", 2048, NULL, 10,
                 gpio_taskHandle);        // start gpio task
     xTaskCreate(rx_task, "uart_rx_task", 1024 * 2, NULL, configMAX_PRIORITIES, NULL);
-    xTaskCreate(tx_task, "uart_tx_task", 1024 * 2, NULL, configMAX_PRIORITIES - 1, NULL);
 
     // ==== ISR inicialization ====
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);        // install gpio isr service
@@ -176,7 +167,7 @@ void app_main() {
     gpio_set_level(GPIO_OUTPUT_IO_1, 0);
     gpio_set_level(GPIO_OUTPUT_IO_2, 0);
 
-    pwm_duty[0] = 70.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
+    pwm_duty[0] = 80.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
     set_PWM_duty(pwm_duty[0], 0);
     sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);        // Update diplay
     TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
