@@ -103,7 +103,9 @@ static void gpio_task(void *arg) {
                     button2LastTimePressed = xTaskGetTickCount();
                     printf("Button 2 pressed.\n");
                     sendRequest(RPLIDAR_CMD_GET_DEVICE_INFO, NULL, 0);
-                    // Button2 code
+                    lidarStateMachine.protocolState = WAITING_RESPONSE_DESCRIPTOR;        // Set protocol state to idle
+                    lidarStateMachine.operationState = WAITING_GET_INFO;        // Set operation state for wainting info
+                                                                            // response Button2 code
                 }
             }
         }
@@ -136,12 +138,12 @@ static void lidar_task(void *arg) {
     char bufferTemp[1];
     while (1) {
         vTaskSuspend(lidar_taskHandle);
-        //printf("Lidar Processing Task\n");
-        //printf("Messages waiting: %d\n", uxQueueMessagesWaiting(rx_buffer_queue));
+        // printf("Lidar Processing Task\n");
+        // printf("Messages waiting: %d\n", uxQueueMessagesWaiting(rx_buffer_queue));
         while (uxQueueMessagesWaiting(rx_buffer_queue) != 0) {                        // Read all bytes in Queue
             xQueueReceive(rx_buffer_queue, (void *)bufferTemp, (TickType_t)5);        // Read one byte from queue
             lidarSendByteToStateMachine(bufferTemp[0], &lidarStateMachine);           // Send to lidar state machine
-            //printf("Messages waiting: %d\n", uxQueueMessagesWaiting(rx_buffer_queue));
+            // printf("Messages waiting: %d\n", uxQueueMessagesWaiting(rx_buffer_queue));
         }
     }
 }
@@ -164,7 +166,7 @@ void app_main() {
     rx_buffer_queue = xQueueCreate(RX_BUFFER_SZ, sizeof(uint8_t));        // Create uart rx buffer
 
     // ==== Task Creation ====
-    xTaskCreate(gpio_task, "gpio_task", configMINIMAL_STACK_SIZE, NULL, GPIO_TASK_PRIORITY,
+    xTaskCreate(gpio_task, "gpio_task", 1024, NULL, GPIO_TASK_PRIORITY,
                 &gpio_taskHandle);                                                       // Create gpio task
     xTaskCreate(rx_task, "uart_rx_task", 1024 * 2, NULL, RX_TASK_PRIORITY, NULL);        // Create RX Task
     xTaskCreate(lidar_task, "lidar_task", 1024 * 2, NULL, LIDAR_TASK_PRIORITY,

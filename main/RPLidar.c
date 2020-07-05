@@ -105,6 +105,7 @@ void lidarSendByteToStateMachine(uint8_t byte, struct lidarStateMachine *stateMa
     // ==== Response descriptor ====
     if (stateMachine->protocolState == WAITING_RESPONSE_DESCRIPTOR &&
         byte == RPLIDAR_ANS_SYNC_BYTE1) {        // Check if fisrt sync byte
+        recvPos = 0;
         headerbuf[recvPos++] = byte;
         stateMachine->protocolState = WAITING_SYNC_BYTE2;
         printf("Response Descriptor decode: \n");
@@ -170,6 +171,7 @@ void lidarSendByteToStateMachine(uint8_t byte, struct lidarStateMachine *stateMa
             printf("\n");
         }
     }
+    //printf("Received byte in state machine: %x\n", byte);
 }
 
 /***********************************************************************************************************************
