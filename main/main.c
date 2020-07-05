@@ -102,10 +102,7 @@ static void gpio_task(void *arg) {
                 if (xTaskGetTickCount() - button2LastTimePressed > 100) {        // Simple debounce cnt using RTOS Ticks
                     button2LastTimePressed = xTaskGetTickCount();
                     printf("Button 2 pressed.\n");
-                    sendRequest(RPLIDAR_CMD_GET_DEVICE_INFO, NULL, 0);
-                    lidarStateMachine.protocolState = WAITING_RESPONSE_DESCRIPTOR;        // Set protocol state to idle
-                    lidarStateMachine.operationState = WAITING_GET_INFO;        // Set operation state for wainting info
-                                                                            // response Button2 code
+                    sendRequest(RPLIDAR_CMD_GET_DEVICE_INFO, NULL, 0, &lidarStateMachine);
                 }
             }
         }

@@ -156,7 +156,7 @@ struct lidarStateMachine {        // Maquina de estado da interface de comunica√
  * PUBLIC FUNCTIONS
  **********************************************************************************************************************/
 
-uint32_t sendRequest(uint8_t cmd, const void *payload, size_t payloadsize);
+uint32_t sendRequest(uint8_t cmd, const void *payload, size_t payloadsize, struct lidarStateMachine *stateMachine);
 void lidarBeginStateMachine(struct lidarStateMachine *stateMachine);
 void lidarSendByteToStateMachine(uint8_t byte, struct lidarStateMachine *stateMachine);
 

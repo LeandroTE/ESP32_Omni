@@ -42,7 +42,7 @@
  * @return              - result (uint8)
  *
  **********************************************************************************************************************/
-uint32_t sendRequest(uint8_t cmd, const void *payload, size_t payloadsize) {
+uint32_t sendRequest(uint8_t cmd, const void *payload, size_t payloadsize, struct lidarStateMachine *stateMachine) {
     rplidar_cmd_packet_t RPLidar_header;
     uint16_t packetSize = 0;
     uint8_t checksum = 0;
@@ -71,6 +71,12 @@ uint32_t sendRequest(uint8_t cmd, const void *payload, size_t payloadsize) {
         packetSize++;
     }
     uart_write_bytes(UART_NUM_1, (char *)&RPLidar_header, packetSize);        // Send packet struture via UART
+
+    if (cmd == RPLIDAR_CMD_GET_DEVICE_INFO) {
+        stateMachine->protocolState = WAITING_RESPONSE_DESCRIPTOR;        // Set protocol state to idle
+        stateMachine->operationState = WAITING_GET_INFO;        // Set operation state for wainting info response
+    }
+
     return RESULT_OK;
 }
 
@@ -84,9 +90,7 @@ uint32_t sendRequest(uint8_t cmd, const void *payload, size_t payloadsize) {
 void lidarBeginStateMachine(struct lidarStateMachine *stateMachine) {
     stateMachine->protocolState = NON_INIT;        // Start state as non initialize
 
-    sendRequest(RPLIDAR_CMD_GET_DEVICE_INFO, NULL, 0);                // Send info command
-    stateMachine->protocolState = WAITING_RESPONSE_DESCRIPTOR;        // Set protocol state to idle
-    stateMachine->operationState = WAITING_GET_INFO;                  // Set operation state for wainting info response
+    sendRequest(RPLIDAR_CMD_GET_DEVICE_INFO, NULL, 0, stateMachine);        // Send info command
 }
 
 /***********************************************************************************************************************
@@ -171,7 +175,7 @@ void lidarSendByteToStateMachine(uint8_t byte, struct lidarStateMachine *stateMa
             printf("\n");
         }
     }
-    //printf("Received byte in state machine: %x\n", byte);
+    // printf("Received byte in state machine: %x\n", byte);
 }
 
 /***********************************************************************************************************************
