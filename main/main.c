@@ -122,9 +122,9 @@ static void rx_task(void *arg) {
             for (i = 0; i < rxBytes; i++) {
                 xQueueSend(rx_buffer_queue, &data[i], (TickType_t)0);        // Send bytes to queue buffer
             }
-
             ESP_LOGI(RX_TASK_TAG, "Read %d bytes", rxBytes);
             ESP_LOG_BUFFER_HEXDUMP(RX_TASK_TAG, data, rxBytes, ESP_LOG_INFO);
+            printf("\r\n==============================\r\n");
             vTaskResume(lidar_taskHandle);        // Wake Lidar task to treat rx buffer
         }
     }
@@ -135,12 +135,12 @@ static void lidar_task(void *arg) {
     char bufferTemp[1];
     while (1) {
         vTaskSuspend(lidar_taskHandle);
-        printf("Lidar Processing Task\n");
-        printf("Messages waiting: %d\n", uxQueueMessagesWaiting(rx_buffer_queue));
+        //printf("Lidar Processing Task\n");
+        //printf("Messages waiting: %d\n", uxQueueMessagesWaiting(rx_buffer_queue));
         while (uxQueueMessagesWaiting(rx_buffer_queue) != 0) {                        // Read all bytes in Queue
             xQueueReceive(rx_buffer_queue, (void *)bufferTemp, (TickType_t)5);        // Read one byte from queue
             lidarSendByteToStateMachine(bufferTemp[0], &lidarStateMachine);           // Send to lidar state machine
-            printf("Messages waiting: %d\n", uxQueueMessagesWaiting(rx_buffer_queue));
+            //printf("Messages waiting: %d\n", uxQueueMessagesWaiting(rx_buffer_queue));
         }
     }
 }

@@ -94,37 +94,29 @@ typedef struct rplidar_cmd_packet_t {
     uint8_t size;
     uint8_t data[0];
     uint8_t checksum;
-} rplidar_cmd_packet_t;
+} __attribute__ ((packed)) rplidar_cmd_packet_t;
 
-typedef struct rplidar_ans_header_t {
+typedef struct rplidar_resp_descriptor_t {
     uint8_t syncByte1;        // must be RPLIDAR_ANS_SYNC_BYTE1
     uint8_t syncByte2;        // must be RPLIDAR_ANS_SYNC_BYTE2
-    uint32_t size : 30;
-    uint32_t subType : 2;
+    uint32_t size :30 ;
+    uint32_t subType :2;
     uint8_t type;
-} rplidar_ans_header_t;
+} __attribute__ ((packed)) rplidar_resp_descriptor_t;
 
 typedef struct rplidar_response_measurement_node_t {
     uint8_t sync_quality;              // syncbit:1;syncbit_inverse:1;quality:6;
     uint16_t angle_q6_checkbit;        // check_bit:1;angle_q6:15;
     uint16_t distance_q2;
-} rplidar_response_measurement_node_t;
-
-typedef struct rplidar_response_device_info_t {
-    uint8_t model;
-    uint16_t firmware_version;
-    uint8_t hardware_version;
-    uint8_t serialnum[16];
-} rplidar_response_device_info_t;
-
-typedef struct rplidar_response_device_health_t {
-    uint8_t status;
-    uint16_t error_code;
-} rplidar_response_device_health_t;
+} __attribute__ ((packed)) rplidar_response_measurement_node_t;
 
 enum lidarProtocolStates {              // Lidar possible states
     IDLE,                               // Protocol state in idle
     WAITING_RESPONSE_DESCRIPTOR,        // Waiting for getting info response
+    WAITING_SYNC_BYTE2,                 // Waiting for second sync byte
+    WAITING_LENGTH_MODE,                // Waiting for response length ans snd mode
+    WAITTING_DATA_TYPE,                 // Waiting for data type
+    WAITING_FOR_REPONSE,                // Waiting for response data
 
 };
 
@@ -138,6 +130,13 @@ enum lidarOperationStates {        // Lidar possible states
 struct lidarStateMachine {        // Maquina de estado da interface de comunicação
     enum lidarProtocolStates protocolState;
     enum lidarOperationStates operationState;
+    uint8_t model;                 // RPLidar Model
+    uint8_t firmware_minor;        // Firmware version
+    uint8_t firmare_major;         // Firmware revision
+    uint8_t hardware;              // Hardware detail
+    char serial[16];               // Serial number
+    uint8_t status;                // RPLidat Status
+    uint16_t error_code;           // Error code
 };
 
 /***********************************************************************************************************************
