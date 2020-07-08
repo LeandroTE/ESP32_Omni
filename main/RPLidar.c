@@ -75,6 +75,12 @@ uint32_t sendRequest(uint8_t cmd, const void *payload, size_t payloadsize, struc
     if (cmd == RPLIDAR_CMD_GET_DEVICE_INFO) {
         stateMachine->protocolState = WAITING_RESPONSE_DESCRIPTOR;        // Set protocol state to idle
         stateMachine->operationState = WAITING_GET_INFO;        // Set operation state for wainting info response
+    } else if (cmd == RPLIDAR_CMD_GET_DEVICE_HEALTH) {
+        stateMachine->protocolState = WAITING_RESPONSE_DESCRIPTOR;        // Set protocol state to idle
+        stateMachine->operationState = WAITING_GET_HEALTH;        // Set operation state for wainting helth response
+    } else if (cmd ==RPLIDAR_CMD_GET_SAMPLE_RATE) {
+        stateMachine->protocolState = WAITING_RESPONSE_DESCRIPTOR;        // Set protocol state to idle
+        stateMachine->operationState = WAITING_SAMPLE_RATE;        // Set operation state for wainting helth response
     }
 
     return RESULT_OK;
@@ -140,22 +146,17 @@ void lidarSendByteToStateMachine(uint8_t byte, struct lidarStateMachine *stateMa
         return;
     }
 
-    // ==== Response date ====
+    // ==== Response Get Info ====
     headerbuf = (uint8_t *)&stateMachine->lidarConfig;        // Get point for config info
     if (stateMachine->protocolState == WAITING_FOR_REPONSE &&
         stateMachine->operationState == WAITING_GET_INFO) {        // Decode get info response
         recvPos = 0;                                               // Reset pointer counter
         headerbuf[recvPos++] = byte;                               // Read first byte from responsa data
         stateMachine->protocolState = READING_RESPONSE;            // Set state to receiving data
-        // printf("Received byte in state machine: %x\n", byte);
-        // printf("Response descriptor size: %d\n", response_descriptor.size);
-        // printf("recvPos: %d\n", recvPos);
     } else if (stateMachine->protocolState == READING_RESPONSE &&
                stateMachine->operationState == WAITING_GET_INFO) {        // Reading data from Get Info response
-        // printf("Received byte in state machine: %x\n", byte);
-        // printf("recvPos: %d\n", recvPos);
-        headerbuf[recvPos++] = byte;        // Read  responsa data
-        if (recvPos == 20) {                // After received last byte set state machine to idle
+        headerbuf[recvPos++] = byte;                                      // Read  responsa data
+        if (recvPos == 20) {        // After received last byte set state machine to idle
             stateMachine->protocolState = IDLE;
             stateMachine->operationState = IDLE_OP;
             printf("\r\n==============================\r\n");
@@ -173,6 +174,59 @@ void lidarSendByteToStateMachine(uint8_t byte, struct lidarStateMachine *stateMa
                 printf("%02x ", (unsigned int)((char *)&stateMachine->lidarConfig)[i]);
             }
             printf("\n");
+            return;
+        }
+    }
+
+    // ==== Response Get Health ====
+    headerbuf = (uint8_t *)&stateMachine->lidarHealth;        // Get point for config info
+    if (stateMachine->protocolState == WAITING_FOR_REPONSE &&
+        stateMachine->operationState == WAITING_GET_HEALTH) {        // Decode get info response
+        recvPos = 0;                                                 // Reset pointer counter
+        headerbuf[recvPos++] = byte;                                 // Read first byte from responsa data
+        stateMachine->protocolState = READING_RESPONSE;              // Set state to receiving data
+    } else if (stateMachine->protocolState == READING_RESPONSE &&
+               stateMachine->operationState == WAITING_GET_HEALTH) {        // Reading data from Get Info response
+        headerbuf[recvPos++] = byte;                                        // Read  responsa data
+        if (recvPos == 3) {        // After received last byte set state machine to idle
+            stateMachine->protocolState = IDLE;
+            stateMachine->operationState = IDLE_OP;
+            printf("\r\n==============================\r\n");
+            printf("\nResponse data decode: \n");
+            printf("Status: %d\n", stateMachine->lidarHealth.status);           // Print status
+            printf("Error: %d\n", stateMachine->lidarHealth.error_code);        // Print Error Code
+            printf("\nResponse data: ");
+            for (int i = 0; i < sizeof(stateMachine->lidarHealth); i++) {
+                printf("%02x ", (unsigned int)((char *)&stateMachine->lidarHealth)[i]);
+            }
+            printf("\n");
+            return;
+        }
+    }
+
+    // ==== Response Get Sample Rate ====
+    headerbuf = (uint8_t *)&stateMachine->sampleRate;        // Get point for config info
+    if (stateMachine->protocolState == WAITING_FOR_REPONSE &&
+        stateMachine->operationState == WAITING_SAMPLE_RATE) {        // Decode get info response
+        recvPos = 0;                                                  // Reset pointer counter
+        headerbuf[recvPos++] = byte;                                  // Read first byte from responsa data
+        stateMachine->protocolState = READING_RESPONSE;               // Set state to receiving data
+    } else if (stateMachine->protocolState == READING_RESPONSE &&
+               stateMachine->operationState == WAITING_SAMPLE_RATE) {        // Reading data from Get Info response
+        headerbuf[recvPos++] = byte;                                         // Read  responsa data
+        if (recvPos == 4) {        // After received last byte set state machine to idle
+            stateMachine->protocolState = IDLE;
+            stateMachine->operationState = IDLE_OP;
+            printf("\r\n==============================\r\n");
+            printf("\nResponse data decode: \n");
+            printf("Tstandard: %d\n", stateMachine->sampleRate.Tstandard);        // Print standard
+            printf("Texpress: %d\n", stateMachine->sampleRate.Texpress);          // Print Texpress
+            printf("\nResponse data: ");
+            for (int i = 0; i < sizeof(stateMachine->sampleRate); i++) {
+                printf("%02x ", (unsigned int)((char *)&stateMachine->sampleRate)[i]);
+            }
+            printf("\n");
+            return;
         }
     }
     // printf("Received byte in state machine: %x\n", byte);

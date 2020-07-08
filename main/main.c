@@ -102,7 +102,7 @@ static void gpio_task(void *arg) {
                 if (xTaskGetTickCount() - button2LastTimePressed > 100) {        // Simple debounce cnt using RTOS Ticks
                     button2LastTimePressed = xTaskGetTickCount();
                     printf("Button 2 pressed.\n");
-                    sendRequest(RPLIDAR_CMD_GET_DEVICE_INFO, NULL, 0, &lidarStateMachine);
+                    sendRequest(RPLIDAR_CMD_GET_SAMPLE_RATE, NULL, 0, &lidarStateMachine);
                 }
             }
         }

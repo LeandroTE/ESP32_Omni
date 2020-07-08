@@ -54,6 +54,7 @@
 // Commands without payload but have response
 #define RPLIDAR_CMD_GET_DEVICE_INFO 0x50
 #define RPLIDAR_CMD_GET_DEVICE_HEALTH 0x52
+#define RPLIDAR_CMD_GET_SAMPLE_RATE 0x59
 
 // ================== Response ==================
 #define RPLIDAR_ANS_TYPE_MEASUREMENT 0x81
@@ -123,6 +124,11 @@ typedef struct rplidar_response_device_health_t {
     uint16_t error_code;
 } __attribute__((packed)) rplidar_response_device_health_t;
 
+typedef struct rplidar_responsesample_rate_t {
+    uint16_t Tstandard;
+    uint16_t Texpress;
+} __attribute__((packed)) rplidar_responsesample_rate_t;
+
 enum lidarProtocolStates {              // Lidar possible states
     IDLE,                               // Protocol state in idle
     WAITING_RESPONSE_DESCRIPTOR,        // Waiting for getting info response
@@ -138,7 +144,8 @@ enum lidarOperationStates {        // Lidar possible states
     IDLE_OP,                       // Non initialize when started
     NON_INIT,                      // Idle state
     WAITING_GET_INFO,              // Waiting for getting info response
-
+    WAITING_GET_HEALTH,            // Wainting for getting health response
+    WAITING_SAMPLE_RATE,           // Waiting sample rate
 };
 
 struct lidarStateMachine {        // Maquina de estado da interface de comunicação
@@ -146,6 +153,7 @@ struct lidarStateMachine {        // Maquina de estado da interface de comunica�
     enum lidarOperationStates operationState;
     rplidar_response_device_info_t lidarConfig;
     rplidar_response_device_health_t lidarHealth;
+    rplidar_responsesample_rate_t sampleRate;
 };
 
 /***********************************************************************************************************************
