@@ -137,7 +137,8 @@ enum lidarProtocolStates {              // Lidar possible states
     WAITTING_DATA_TYPE,                 // Waiting for data type
     WAITING_FOR_REPONSE,                // Waiting for response data
     READING_RESPONSE,                   // Reading response data
-
+    WAITING_SET_FLAG,                   // Waiting for set flag from scan data
+    WAITING_FOR_NEXT_SCAN_DATA,         // Waiting for next scan data
 };
 
 enum lidarOperationStates {        // Lidar possible states
@@ -146,6 +147,7 @@ enum lidarOperationStates {        // Lidar possible states
     WAITING_GET_INFO,              // Waiting for getting info response
     WAITING_GET_HEALTH,            // Wainting for getting health response
     WAITING_SAMPLE_RATE,           // Waiting sample rate
+    READING_SCAN_DATA,             // Reading scan data from Lidar
 };
 
 struct lidarStateMachine {        // Maquina de estado da interface de comunicação
@@ -154,6 +156,13 @@ struct lidarStateMachine {        // Maquina de estado da interface de comunica�
     rplidar_response_device_info_t lidarConfig;
     rplidar_response_device_health_t lidarHealth;
     rplidar_responsesample_rate_t sampleRate;
+};
+
+struct RPLidarMeasurement {
+    float distance;
+    float angle;
+    uint8_t quality;
+    bool startBit;
 };
 
 /***********************************************************************************************************************

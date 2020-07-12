@@ -37,7 +37,7 @@
  * MACROS
  **********************************************************************************************************************/
 #define FIRST_LINE 5
-#define RX_BUFFER_SZ 500
+#define RX_BUFFER_SZ 1000
 
 // ==== TASK PRIORITIES ====
 #define GPIO_TASK_PRIORITY 7
@@ -80,6 +80,7 @@ static void IRAM_ATTR gpio_isr_handler(void *arg) {
 static void gpio_task(void *arg) {
     static uint32_t button1LastTimePressed = 0;        // Debounce counter button 1
     static uint32_t button2LastTimePressed = 0;        // Debounce counter button 2
+    static uint8_t button2state = 0;
     uint32_t io_num;
     while (1) {
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
@@ -87,12 +88,12 @@ static void gpio_task(void *arg) {
                 if (xTaskGetTickCount() - button1LastTimePressed > 100) {        // Simple debounce cnt using RTOS ticks
                     button1LastTimePressed = xTaskGetTickCount();
                     printf("Button 1 pressed.\n");
-                    if (pwm_duty[0] == 80.0) {
-                        pwm_duty[0] = 0.0;        // Set channel 0 (PWM Lidar) to 0% duty cycle
-                    } else {
-                        pwm_duty[0] = 80.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
-                    }
-
+                    // if (pwm_duty[0] == 90.0) {
+                    //    pwm_duty[0] = 0.0;        // Set channel 0 (PWM Lidar) to 0% duty cycle
+                    //} else {
+                    //    pwm_duty[0] = 90.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
+                    //}
+                    sendRequest(RPLIDAR_CMD_RESET, NULL, 0, &lidarStateMachine);
                     set_PWM_duty(pwm_duty[0], 0);
                     sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);        // Update diplay
                     TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
@@ -102,7 +103,9 @@ static void gpio_task(void *arg) {
                 if (xTaskGetTickCount() - button2LastTimePressed > 100) {        // Simple debounce cnt using RTOS Ticks
                     button2LastTimePressed = xTaskGetTickCount();
                     printf("Button 2 pressed.\n");
-                    sendRequest(RPLIDAR_CMD_GET_SAMPLE_RATE, NULL, 0, &lidarStateMachine);
+                    if (button2state == 0) {
+                        sendRequest(RPLIDAR_CMD_SCAN, NULL, 0, &lidarStateMachine);
+                    }
                 }
             }
         }
@@ -125,6 +128,11 @@ static void rx_task(void *arg) {
             ESP_LOGI(RX_TASK_TAG, "Read %d bytes", rxBytes);
             ESP_LOG_BUFFER_HEXDUMP(RX_TASK_TAG, data, rxBytes, ESP_LOG_INFO);
             printf("\r\n==============================\r\n");
+            if (rxBytes > 200) {
+                sendRequest(RPLIDAR_CMD_STOP, NULL, 0, &lidarStateMachine);
+                printf("Stop command sent\n");
+            }
+
             vTaskResume(lidar_taskHandle);        // Wake Lidar task to treat rx buffer
         }
     }
@@ -163,7 +171,7 @@ void app_main() {
     rx_buffer_queue = xQueueCreate(RX_BUFFER_SZ, sizeof(uint8_t));        // Create uart rx buffer
 
     // ==== Task Creation ====
-    xTaskCreate(gpio_task, "gpio_task", 1024, NULL, GPIO_TASK_PRIORITY,
+    xTaskCreate(gpio_task, "gpio_task", 1024*2, NULL, GPIO_TASK_PRIORITY,
                 &gpio_taskHandle);                                                       // Create gpio task
     xTaskCreate(rx_task, "uart_rx_task", 1024 * 2, NULL, RX_TASK_PRIORITY, NULL);        // Create RX Task
     xTaskCreate(lidar_task, "lidar_task", 1024 * 2, NULL, LIDAR_TASK_PRIORITY,
@@ -201,7 +209,7 @@ void app_main() {
     gpio_set_level(GPIO_OUTPUT_IO_1, 0);
     gpio_set_level(GPIO_OUTPUT_IO_2, 0);
 
-    pwm_duty[0] = 00.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
+    pwm_duty[0] = 100.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
     set_PWM_duty(pwm_duty[0], 0);
     sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);        // Update diplay
     TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
