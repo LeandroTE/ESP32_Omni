@@ -171,7 +171,7 @@ void app_main() {
     rx_buffer_queue = xQueueCreate(RX_BUFFER_SZ, sizeof(uint8_t));        // Create uart rx buffer
 
     // ==== Task Creation ====
-    xTaskCreate(gpio_task, "gpio_task", 1024*2, NULL, GPIO_TASK_PRIORITY,
+    xTaskCreate(gpio_task, "gpio_task", 1024 * 2, NULL, GPIO_TASK_PRIORITY,
                 &gpio_taskHandle);                                                       // Create gpio task
     xTaskCreate(rx_task, "uart_rx_task", 1024 * 2, NULL, RX_TASK_PRIORITY, NULL);        // Create RX Task
     xTaskCreate(lidar_task, "lidar_task", 1024 * 2, NULL, LIDAR_TASK_PRIORITY,
@@ -192,7 +192,7 @@ void app_main() {
     printf("PRIMITUS OMNI, LEANDRO 06/2020\r\n");
     printf("==============================\r\n");
 
-    TFT_setRotation(3);
+    TFT_setRotation(1);
     disp_header("PRIMITUS OMNI v0.1");
     TFT_setFont(DEFAULT_FONT, NULL);
     int tempy = TFT_getfontheight() + 4;
@@ -209,9 +209,9 @@ void app_main() {
     gpio_set_level(GPIO_OUTPUT_IO_1, 0);
     gpio_set_level(GPIO_OUTPUT_IO_2, 0);
 
-    pwm_duty[0] = 100.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
-    set_PWM_duty(pwm_duty[0], 0);
-    sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);        // Update diplay
+    pwm_duty[3] = 80.0;        // Set channel 3 (PWM Lidar) to 70% duty cycle
+    set_PWM_duty(pwm_duty[3], 3);
+    sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[3]);        // Update diplay
     TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
     TFT_print(tmp_buff, 0, FIRST_LINE);
 }
