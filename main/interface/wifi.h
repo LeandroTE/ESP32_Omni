@@ -30,7 +30,6 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-#include "spiffs_vfs.h"
 #include "tft.h"
 #include "tftspi.h"
 

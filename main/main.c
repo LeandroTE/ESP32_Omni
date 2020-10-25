@@ -31,18 +31,26 @@
 
 #include "RPLidar.h"
 #include "display.h"
-#include "spiffs_vfs.h"
 #include "system.h"
 #include "tft.h"
 #include "tftspi.h"
 #include "wifi.h"
 
+#include "lwip/apps/netbiosns.h"
 #include "lwip/err.h"
 #include "lwip/sys.h"
+
+#include "esp_netif.h"
+#include "esp_spiffs.h"
+#include "esp_vfs_fat.h"
+#include "sdkconfig.h"
+
+
 
 /***********************************************************************************************************************
  * COSNTANTS
  **********************************************************************************************************************/
+static const char *TAG = "example";
 
 /***********************************************************************************************************************
  * MACROS
@@ -54,6 +62,10 @@
 #define GPIO_TASK_PRIORITY 7
 #define RX_TASK_PRIORITY 6
 #define LIDAR_TASK_PRIORITY 5
+
+// ==== HTTP Server =====
+#define MDNS_INSTANCE "esp home web server"
+
 /***********************************************************************************************************************
  * TYPES
  **********************************************************************************************************************/
@@ -74,6 +86,8 @@ TaskHandle_t lidar_taskHandle = NULL;
 // ==== Queue Handle ====
 static xQueueHandle gpio_evt_queue = NULL;
 static xQueueHandle rx_buffer_queue = NULL;
+
+esp_err_t start_rest_server(const char *base_path);
 
 /***********************************************************************************************************************
  * ISR'S
@@ -171,6 +185,39 @@ static void lidar_task(void *arg) {
 /***********************************************************************************************************************
  * LOCALS FUNCTIONS
  **********************************************************************************************************************/
+#if CONFIG_EXAMPLE_WEB_DEPLOY_SF
+esp_err_t init_fs(void)
+{
+    esp_vfs_spiffs_conf_t conf = {
+        .base_path = CONFIG_EXAMPLE_WEB_MOUNT_POINT,
+        .partition_label = NULL,
+        .max_files = 5,
+        .format_if_mount_failed = false
+    };
+    esp_err_t ret = esp_vfs_spiffs_register(&conf);
+
+    if (ret != ESP_OK) {
+        if (ret == ESP_FAIL) {
+            ESP_LOGE(TAG, "Failed to mount or format filesystem");
+        } else if (ret == ESP_ERR_NOT_FOUND) {
+            ESP_LOGE(TAG, "Failed to find SPIFFS partition");
+        } else {
+            ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
+        }
+        return ESP_FAIL;
+    }
+
+    size_t total = 0, used = 0;
+    ret = esp_spiffs_info(NULL, &total, &used);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s).", esp_err_to_name(ret));
+    } else {
+        ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
+    }
+    return ESP_OK;
+}
+#endif
+
 
 void app_main() {
     gpio_config_t io_conf;    // Declare GPIO config structure
@@ -240,7 +287,13 @@ void app_main() {
     printf("\r\n==============================\r\n");
     printf("Wifi sequence start\r\n");
     printf("==============================\r\n\n");
+
+    // initialise_mdns();
+    netbiosns_init();
+    netbiosns_set_name(CONFIG_EXAMPLE_MDNS_HOST_NAME);
     wifi_init_sta();    // Start wifi
+    ESP_ERROR_CHECK(init_fs());
+    ESP_ERROR_CHECK(start_rest_server(CONFIG_EXAMPLE_WEB_MOUNT_POINT));
 }
 
 /***********************************************************************************************************************
