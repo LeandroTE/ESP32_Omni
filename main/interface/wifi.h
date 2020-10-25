@@ -41,8 +41,8 @@
 /***********************************************************************************************************************
  * MACROS
  **********************************************************************************************************************/
-#define EXAMPLE_ESP_WIFI_SSID "God Save The Queen"    // Wifi SSID to connect
-#define EXAMPLE_ESP_WIFI_PASS "peg@ladrao"            // Wifi password
+#define EXAMPLE_ESP_WIFI_SSID CONFIG_WIFI_SSID    // Wifi SSID to connect
+#define EXAMPLE_ESP_WIFI_PASS CONFIG_WIFI_PASSWORD            // Wifi password
 #define EXAMPLE_ESP_MAXIMUM_RETRY 5                   // Max number of retries
 
 /* The event group allows multiple bits for each event, but we only care about two events:
