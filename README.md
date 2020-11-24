@@ -1,20 +1,18 @@
 
-# Software to control Primitus Omni Robot
+# Software to control iOmni Robot
 
-* More detail in [hackday.io] (https://hackaday.io/project/173420-primitus-omni)
+* More detail in [hackday.io] (https://hackaday.io/project/173420-iomni)
 ---
 
-**This library must be built with the esp-idf release/v4.0 branch.**
-
-ESP-IDF 4.0 is currently in beta and instructions are found [here](
-https://docs.espressif.com/projects/esp-idf/en/v4.0-beta1/get-started/index.html)
+**This library was built with the esp-idf 4.2 commit bce69d9fc1a70ef7ba57b4e1dfbf73bae0b2b414**
 ---
 
-**This repository contains the code to control the Primitus Omni Robot, and is based in the the board TTGO t-display**
+**This repository contains the code to control the iOmni Robot, and is based in the the board TTGO t-display**
 
 This project use the following projects as references:
 * https://github.com/jeremyjh/ESP32_TFT_library
 * https://github.com/loboris/ESP32_TFT_library
+* https://github.com/espressif/esp-idf/tree/master/examples/protocols/http_server/restful_server
 
 ---
 

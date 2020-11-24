@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- ===  Primitus Omni Project====
+ ===  iOmni Project====
  * @file 	main.c
  * @brief	System functions
  * @author	Leandro
@@ -44,8 +44,6 @@
 #include "esp_spiffs.h"
 #include "esp_vfs_fat.h"
 #include "sdkconfig.h"
-
-
 
 /***********************************************************************************************************************
  * COSNTANTS
@@ -186,14 +184,11 @@ static void lidar_task(void *arg) {
  * LOCALS FUNCTIONS
  **********************************************************************************************************************/
 #if CONFIG_EXAMPLE_WEB_DEPLOY_SF
-esp_err_t init_fs(void)
-{
-    esp_vfs_spiffs_conf_t conf = {
-        .base_path = CONFIG_EXAMPLE_WEB_MOUNT_POINT,
-        .partition_label = NULL,
-        .max_files = 5,
-        .format_if_mount_failed = false
-    };
+esp_err_t init_fs(void) {
+    esp_vfs_spiffs_conf_t conf = {.base_path = CONFIG_EXAMPLE_WEB_MOUNT_POINT,
+                                  .partition_label = NULL,
+                                  .max_files = 5,
+                                  .format_if_mount_failed = false};
     esp_err_t ret = esp_vfs_spiffs_register(&conf);
 
     if (ret != ESP_OK) {
@@ -218,11 +213,10 @@ esp_err_t init_fs(void)
 }
 #endif
 
-
 void app_main() {
     gpio_config_t io_conf;    // Declare GPIO config structure
 
-    // ==== System Initialization ====
+    /* ==== System Initialization ====*/
     tft_init();            // TFT Init
     pwm_init();            // PWM Init
     GPIO_Init(io_conf);    // GPIO Init
@@ -257,11 +251,11 @@ void app_main() {
 
     vTaskDelay(500 / portTICK_RATE_MS);
     printf("\r\n==============================\r\n");
-    printf("PRIMITUS OMNI, LEANDRO 06/2020\r\n");
+    printf("iOmni, LEANDRO 06/2020\r\n");
     printf("==============================\r\n\n");
 
     TFT_setRotation(1);
-    disp_header("PRIMITUS OMNI v0.1");
+    disp_header("iOmni v0.1");
     TFT_setFont(DEFAULT_FONT, NULL);
     int tempy = TFT_getfontheight() + 4;
     tft_fg = TFT_GREENYELLOW;
