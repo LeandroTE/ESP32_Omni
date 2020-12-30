@@ -106,7 +106,7 @@ static esp_err_t rest_common_get_handler(httpd_req_t *req)
 }
 
 /* Simple handler for light brightness control */
-static esp_err_t light_brightness_post_handler(httpd_req_t *req)
+static esp_err_t motor_speed_post_handler(httpd_req_t *req)
 {
     int total_len = req->content_len;
     int cur_len = 0;
@@ -129,10 +129,10 @@ static esp_err_t light_brightness_post_handler(httpd_req_t *req)
     buf[total_len] = '\0';
 
     cJSON *root = cJSON_Parse(buf);
-    int red = cJSON_GetObjectItem(root, "red")->valueint;
-    int green = cJSON_GetObjectItem(root, "green")->valueint;
-    int blue = cJSON_GetObjectItem(root, "blue")->valueint;
-    ESP_LOGI(REST_TAG, "Light control: red = %d, green = %d, blue = %d", red, green, blue);
+    int M1 = cJSON_GetObjectItem(root, "M1")->valueint;
+    int M2 = cJSON_GetObjectItem(root, "M2")->valueint;
+    int M3 = cJSON_GetObjectItem(root, "M3")->valueint;
+    ESP_LOGI(REST_TAG, "Motor Speed: M1 = %d, M2 = %d, M3 = %d", M1, M2, M3);
     cJSON_Delete(root);
     httpd_resp_sendstr(req, "Post control value successfully");
     return ESP_OK;
@@ -201,9 +201,9 @@ esp_err_t start_rest_server(const char *base_path)
 
     /* URI handler for light brightness control */
     httpd_uri_t light_brightness_post_uri = {
-        .uri = "/api/v1/light/brightness",
+        .uri = "/api/v1/motor/speed",
         .method = HTTP_POST,
-        .handler = light_brightness_post_handler,
+        .handler = motor_speed_post_handler,
         .user_ctx = rest_context
     };
     httpd_register_uri_handler(server, &light_brightness_post_uri);

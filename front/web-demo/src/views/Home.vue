@@ -109,7 +109,7 @@ export default {
         .post("/api/v1/motor/speed", {
           M1: this.M1,
           M2: this.M2,
-          M2: this.M3,
+          M3: this.M3,
         })
         .then((data) => {
           console.log(data);
