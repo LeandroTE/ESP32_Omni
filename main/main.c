@@ -189,6 +189,7 @@ static void display_task(void *arg) {
         displayData.pwm_duty[2] = motor_data[M2_CH].pwm_duty;       // Update display variable for 3° line
         displayData.pwm_duty[3] = motor_data[M3_CH].pwm_duty;       // Update display variable for 4° line
         update_disp(&displayData);
+        
         vTaskDelay(500 / portTICK_RATE_MS);
     }
 }
