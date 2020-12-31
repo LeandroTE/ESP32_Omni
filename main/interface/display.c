@@ -60,6 +60,40 @@ void disp_header(char *info) {
     tft_bg = TFT_BLACK;
     TFT_setclipwin(0, TFT_getfontheight() + 9, tft_width - 1, tft_height - TFT_getfontheight() - 10);
 }
+/***********************************************************************************************************************
+ * @brief Function to update display, this function also create the visual of the display
+ *
+ * @param display_data - Display data, this structure is the interface for the display module
+ *
+ * @return void
+ *
+ **********************************************************************************************************************/
+
+void update_disp(struct display_data_t *display_data) {
+    static uint8_t state = DISP_NON_INIT;    // State machine for the display for initialization
+    char tmp_buff[64];
+    int tempy = TFT_getfontheight() + 4;
+
+    if (state == DISP_NON_INIT) {
+        TFT_setRotation(1);
+        disp_header("iOmni v0.1");
+        TFT_setFont(DEFAULT_FONT, NULL);
+        tft_fg = TFT_GREENYELLOW;
+        sprintf(tmp_buff, "PWM Lidar: %3.1f %%", (float)display_data->pwm_duty[3]);    // Update diplay
+        TFT_print(tmp_buff, 0, FIRST_LINE);
+        sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)display_data->pwm_duty[0]);
+        TFT_print(tmp_buff, 0, FIRST_LINE + tempy);
+        sprintf(tmp_buff, "PWM 2: %3.1f %%", (float)display_data->pwm_duty[1]);
+        TFT_print(tmp_buff, 0, FIRST_LINE + 2 * tempy);
+        sprintf(tmp_buff, "PWM 3: %3.1f %%", (float)display_data->pwm_duty[2]);
+        TFT_print(tmp_buff, 0, FIRST_LINE + 3 * tempy);
+        //sprintf(tmp_buff, "IP:" IPSTR, IP2STR(&event->ip_info.ip));
+
+        //tft_fg = TFT_YELLOW;
+       // TFT_print(tmp_buff, 0, 77);
+    } else if (state == DISP_INIT) {
+    }
+}
 
 /***********************************************************************************************************************
  * END OF FILE

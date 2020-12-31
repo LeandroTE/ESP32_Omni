@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "Globals.h"
 
 #include "driver/gpio.h"
 #include "driver/ledc.h"
@@ -48,18 +49,19 @@
 /***********************************************************************************************************************
  * COSNTANTS
  **********************************************************************************************************************/
-static const char *TAG = "example";
+static const char *TAG = "MAIN";
 
 /***********************************************************************************************************************
  * MACROS
  **********************************************************************************************************************/
-#define FIRST_LINE 5
 #define RX_BUFFER_SZ 1000
+#define FIRST_LINE 5
 
 // ==== TASK PRIORITIES ====
 #define GPIO_TASK_PRIORITY 7
 #define RX_TASK_PRIORITY 6
 #define LIDAR_TASK_PRIORITY 5
+#define DISPLAY_TASK_PRIORITY 4
 
 // ==== HTTP Server =====
 #define MDNS_INSTANCE "esp home web server"
@@ -73,9 +75,11 @@ static const char *TAG = "example";
  **********************************************************************************************************************/
 // ==== Variables ====
 static char tmp_buff[64];
+motor_data_t motor_data;
 float pwm_duty[4] = {0.0, 0.0, 0.0, 0.0};
 
 struct lidarStateMachine lidarStateMachine;
+display_data_t displayData;
 
 // ==== Task Handle ====
 TaskHandle_t gpio_taskHandle = NULL;
@@ -180,6 +184,13 @@ static void lidar_task(void *arg) {
     }
 }
 
+static void display_task(void *arg) {
+    while(1){
+        printf("Display Task\r\n");
+        vTaskDelay(500 / portTICK_RATE_MS);
+    }
+}
+
 /***********************************************************************************************************************
  * LOCALS FUNCTIONS
  **********************************************************************************************************************/
@@ -208,7 +219,8 @@ void app_main() {
                 &gpio_taskHandle);                                                   // Create gpio task
     xTaskCreate(rx_task, "uart_rx_task", 1024 * 2, NULL, RX_TASK_PRIORITY, NULL);    // Create RX Task
     xTaskCreate(lidar_task, "lidar_task", 1024 * 2, NULL, LIDAR_TASK_PRIORITY,
-                &lidar_taskHandle);    // Create Lidar task
+                &lidar_taskHandle);                                                            // Create Lidar task
+    xTaskCreate(display_task, "display_task", 1024 * 2, NULL, DISPLAY_TASK_PRIORITY, NULL);    // Create Display Task
 
     // ==== ISR inicialization ====
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);    // install gpio isr service
@@ -225,28 +237,17 @@ void app_main() {
     printf("iOmni, LEANDRO 06/2020\r\n");
     printf("==============================\r\n\n");
 
-    TFT_setRotation(1);
-    disp_header("iOmni v0.1");
-    TFT_setFont(DEFAULT_FONT, NULL);
-    int tempy = TFT_getfontheight() + 4;
-    tft_fg = TFT_GREENYELLOW;
-    sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);
-    TFT_print(tmp_buff, 0, FIRST_LINE);
-    sprintf(tmp_buff, "PWM 2: %3.1f %%", (float)pwm_duty[1]);
-    TFT_print(tmp_buff, 0, FIRST_LINE + tempy);
-    sprintf(tmp_buff, "PWM 3: %3.1f %%", (float)pwm_duty[2]);
-    TFT_print(tmp_buff, 0, FIRST_LINE + 2 * tempy);
-    sprintf(tmp_buff, "PWM 4: %3.1f %%", (float)pwm_duty[3]);
-    TFT_print(tmp_buff, 0, FIRST_LINE + 3 * tempy);
     gpio_set_level(GPIO_OUTPUT_IO_0, 0);
     gpio_set_level(GPIO_OUTPUT_IO_1, 0);
     gpio_set_level(GPIO_OUTPUT_IO_2, 0);
 
-    pwm_duty[3] = 80.0;    // Set channel 3 (PWM Lidar) to 70% duty cycle
+    pwm_duty[3] = 80.0;    // Set channel 3 (PWM Lidar) to 80% duty cycle
     set_PWM_duty(pwm_duty[3], 3);
-    sprintf(tmp_buff, "PWM Lidar: %3.1f %%", (float)pwm_duty[3]);    // Update diplay
-    TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
-    TFT_print(tmp_buff, 0, FIRST_LINE);
+    displayData.pwm_duty[0] = pwm_duty[0];
+    displayData.pwm_duty[1] = pwm_duty[1];
+    displayData.pwm_duty[2] = pwm_duty[2];
+    displayData.pwm_duty[3] = pwm_duty[3];
+    update_disp(&displayData);
 
     // ==== Wifi Inicialization ====
     printf("\r\n==============================\r\n");

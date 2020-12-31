@@ -19,7 +19,6 @@
 #include <string.h>
 #include <time.h>
 
-#include "display.h"
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 #include "driver/uart.h"

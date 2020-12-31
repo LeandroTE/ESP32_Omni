@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "../Globals.h"
 
 #include "esp_system.h"
 #include "esp_wifi.h"
