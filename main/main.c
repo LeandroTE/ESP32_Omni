@@ -12,11 +12,11 @@
  * INCLUDES
  **********************************************************************************************************************/
 
+#include "Globals.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "Globals.h"
 
 #include "driver/gpio.h"
 #include "driver/ledc.h"
@@ -74,9 +74,7 @@ static const char *TAG = "MAIN";
  * GLOBALS VARIABLES
  **********************************************************************************************************************/
 // ==== Variables ====
-static char tmp_buff[64];
-motor_data_t motor_data;
-float pwm_duty[4] = {0.0, 0.0, 0.0, 0.0};
+motor_data_t motor_data[4];
 
 struct lidarStateMachine lidarStateMachine;
 display_data_t displayData;
@@ -125,10 +123,10 @@ static void gpio_task(void *arg) {
                     //    pwm_duty[0] = 90.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
                     //}
                     sendRequest(RPLIDAR_CMD_RESET, NULL, 0, &lidarStateMachine);
-                    set_PWM_duty(pwm_duty[0], 0);
-                    sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);    // Update diplay
-                    TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
-                    TFT_print(tmp_buff, 0, FIRST_LINE);
+                    // set_PWM_duty(pwm_duty[0], 0);
+                    // sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);    // Update diplay
+                    // TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
+                    // TFT_print(tmp_buff, 0, FIRST_LINE);
                 }
             } else if (io_num == BUTTON2 && gpio_get_level(io_num) == 1) {    // Check if GPIO35 was pressed
                 if (xTaskGetTickCount() - button2LastTimePressed > 100) {     // Simple debounce cnt using RTOS Ticks
@@ -185,8 +183,12 @@ static void lidar_task(void *arg) {
 }
 
 static void display_task(void *arg) {
-    while(1){
-        printf("Display Task\r\n");
+    while (1) {
+        displayData.pwm_duty[0] = motor_data[LIDAR_CH].pwm_duty;    // Update display variable for 1° line
+        displayData.pwm_duty[1] = motor_data[M1_CH].pwm_duty;       // Update display variable for 2° line
+        displayData.pwm_duty[2] = motor_data[M2_CH].pwm_duty;       // Update display variable for 3° line
+        displayData.pwm_duty[3] = motor_data[M3_CH].pwm_duty;       // Update display variable for 4° line
+        update_disp(&displayData);
         vTaskDelay(500 / portTICK_RATE_MS);
     }
 }
@@ -241,13 +243,13 @@ void app_main() {
     gpio_set_level(GPIO_OUTPUT_IO_1, 0);
     gpio_set_level(GPIO_OUTPUT_IO_2, 0);
 
-    pwm_duty[3] = 80.0;    // Set channel 3 (PWM Lidar) to 80% duty cycle
-    set_PWM_duty(pwm_duty[3], 3);
-    displayData.pwm_duty[0] = pwm_duty[0];
-    displayData.pwm_duty[1] = pwm_duty[1];
-    displayData.pwm_duty[2] = pwm_duty[2];
-    displayData.pwm_duty[3] = pwm_duty[3];
-    update_disp(&displayData);
+    motor_data[LIDAR_CH].pwm_duty = 80.0;                       // Set channel 3 (PWM Lidar) to 80% duty cycle
+    set_PWM_duty(motor_data[LIDAR_CH].pwm_duty, LIDAR_CH);      // Set channel 3 (PWM Lidar) to 80% duty cycle
+    displayData.pwm_duty[0] = motor_data[LIDAR_CH].pwm_duty;    // Update display variable for 1° line
+    displayData.pwm_duty[1] = motor_data[M1_CH].pwm_duty;       // Update display variable for 2° line
+    displayData.pwm_duty[2] = motor_data[M2_CH].pwm_duty;       // Update display variable for 3° line
+    displayData.pwm_duty[3] = motor_data[M3_CH].pwm_duty;       // Update display variable for 4° line
+    update_disp(&displayData);                                  // Update display (in this case initialize display)
 
     // ==== Wifi Inicialization ====
     printf("\r\n==============================\r\n");

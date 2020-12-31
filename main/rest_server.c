@@ -6,23 +6,22 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
-#include <string.h>
-#include <fcntl.h>
-#include "esp_http_server.h"
-#include "esp_system.h"
-#include "esp_log.h"
-#include "esp_vfs.h"
+#include "Globals.h"
 #include "cJSON.h"
+#include "esp_http_server.h"
+#include "esp_log.h"
+#include "esp_system.h"
+#include "esp_vfs.h"
+#include <fcntl.h>
+#include <string.h>
 
 static const char *REST_TAG = "esp-rest";
-#define REST_CHECK(a, str, goto_tag, ...)                                              \
-    do                                                                                 \
-    {                                                                                  \
-        if (!(a))                                                                      \
-        {                                                                              \
-            ESP_LOGE(REST_TAG, "%s(%d): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-            goto goto_tag;                                                             \
-        }                                                                              \
+#define REST_CHECK(a, str, goto_tag, ...)                                                                              \
+    do {                                                                                                               \
+        if (!(a)) {                                                                                                    \
+            ESP_LOGE(REST_TAG, "%s(%d): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__);                                 \
+            goto goto_tag;                                                                                             \
+        }                                                                                                              \
     } while (0)
 
 #define FILE_PATH_MAX (ESP_VFS_PATH_MAX + 128)
@@ -36,8 +35,7 @@ typedef struct rest_server_context {
 #define CHECK_FILE_EXTENSION(filename, ext) (strcasecmp(&filename[strlen(filename) - strlen(ext)], ext) == 0)
 
 /* Set HTTP response content type according to file extension */
-static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filepath)
-{
+static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filepath) {
     const char *type = "text/plain";
     if (CHECK_FILE_EXTENSION(filepath, ".html")) {
         type = "text/html";
@@ -56,8 +54,7 @@ static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filepa
 }
 
 /* Send HTTP response with the contents of the requested file */
-static esp_err_t rest_common_get_handler(httpd_req_t *req)
-{
+static esp_err_t rest_common_get_handler(httpd_req_t *req) {
     char filepath[FILE_PATH_MAX];
 
     rest_server_context_t *rest_context = (rest_server_context_t *)req->user_ctx;
@@ -106,8 +103,7 @@ static esp_err_t rest_common_get_handler(httpd_req_t *req)
 }
 
 /* Simple handler for light brightness control */
-static esp_err_t motor_speed_post_handler(httpd_req_t *req)
-{
+static esp_err_t motor_speed_post_handler(httpd_req_t *req) {
     int total_len = req->content_len;
     int cur_len = 0;
     char *buf = ((rest_server_context_t *)(req->user_ctx))->scratch;
@@ -133,14 +129,17 @@ static esp_err_t motor_speed_post_handler(httpd_req_t *req)
     int M2 = cJSON_GetObjectItem(root, "M2")->valueint;
     int M3 = cJSON_GetObjectItem(root, "M3")->valueint;
     ESP_LOGI(REST_TAG, "Motor Speed: M1 = %d, M2 = %d, M3 = %d", M1, M2, M3);
+    motor_data[M1_CH].pwm_duty = (float)M1;
+    motor_data[M2_CH].pwm_duty = (float)M2;
+    motor_data[M3_CH].pwm_duty = (float)M3;
+
     cJSON_Delete(root);
     httpd_resp_sendstr(req, "Post control value successfully");
     return ESP_OK;
 }
 
 /* Simple handler for getting system handler */
-static esp_err_t system_info_get_handler(httpd_req_t *req)
-{
+static esp_err_t system_info_get_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "application/json");
     cJSON *root = cJSON_CreateObject();
     esp_chip_info_t chip_info;
@@ -155,8 +154,7 @@ static esp_err_t system_info_get_handler(httpd_req_t *req)
 }
 
 /* Simple handler for getting temperature data */
-static esp_err_t temperature_data_get_handler(httpd_req_t *req)
-{
+static esp_err_t temperature_data_get_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "application/json");
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "raw", esp_random() % 20);
@@ -167,8 +165,7 @@ static esp_err_t temperature_data_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-esp_err_t start_rest_server(const char *base_path)
-{
+esp_err_t start_rest_server(const char *base_path) {
     REST_CHECK(base_path, "wrong base path", err);
     rest_server_context_t *rest_context = calloc(1, sizeof(rest_server_context_t));
     REST_CHECK(rest_context, "No memory for rest context", err);
@@ -183,38 +180,26 @@ esp_err_t start_rest_server(const char *base_path)
 
     /* URI handler for fetching system info */
     httpd_uri_t system_info_get_uri = {
-        .uri = "/api/v1/system/info",
-        .method = HTTP_GET,
-        .handler = system_info_get_handler,
-        .user_ctx = rest_context
-    };
+        .uri = "/api/v1/system/info", .method = HTTP_GET, .handler = system_info_get_handler, .user_ctx = rest_context};
     httpd_register_uri_handler(server, &system_info_get_uri);
 
     /* URI handler for fetching temperature data */
-    httpd_uri_t temperature_data_get_uri = {
-        .uri = "/api/v1/temp/raw",
-        .method = HTTP_GET,
-        .handler = temperature_data_get_handler,
-        .user_ctx = rest_context
-    };
+    httpd_uri_t temperature_data_get_uri = {.uri = "/api/v1/temp/raw",
+                                            .method = HTTP_GET,
+                                            .handler = temperature_data_get_handler,
+                                            .user_ctx = rest_context};
     httpd_register_uri_handler(server, &temperature_data_get_uri);
 
     /* URI handler for light brightness control */
-    httpd_uri_t light_brightness_post_uri = {
-        .uri = "/api/v1/motor/speed",
-        .method = HTTP_POST,
-        .handler = motor_speed_post_handler,
-        .user_ctx = rest_context
-    };
+    httpd_uri_t light_brightness_post_uri = {.uri = "/api/v1/motor/speed",
+                                             .method = HTTP_POST,
+                                             .handler = motor_speed_post_handler,
+                                             .user_ctx = rest_context};
     httpd_register_uri_handler(server, &light_brightness_post_uri);
 
     /* URI handler for getting web server files */
     httpd_uri_t common_get_uri = {
-        .uri = "/*",
-        .method = HTTP_GET,
-        .handler = rest_common_get_handler,
-        .user_ctx = rest_context
-    };
+        .uri = "/*", .method = HTTP_GET, .handler = rest_common_get_handler, .user_ctx = rest_context};
     httpd_register_uri_handler(server, &common_get_uri);
 
     return ESP_OK;

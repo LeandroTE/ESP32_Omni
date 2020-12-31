@@ -25,13 +25,17 @@
 /***********************************************************************************************************************
  * MACROS
  **********************************************************************************************************************/
+#define M1_CH 0       // Channel number for motor 1
+#define M2_CH 1       // Channel number for motor 2
+#define M3_CH 2       // Channel number for motor 3
+#define LIDAR_CH 3    // Channel number for Lidar Motor
 
 /***********************************************************************************************************************
  * TYPES
  **********************************************************************************************************************/
 typedef struct motor_data_t {
-    float pwm_duty[3];    // PWM speed for motor control
-    uint8_t direction[3]; // Motor direction
+    float pwm_duty;    // PWM speed for motor control
+    uint8_t direction; // Motor direction
 }__attribute__((packed))motor_data_t;
 
 typedef struct display_data_t {
@@ -43,7 +47,7 @@ typedef struct display_data_t {
  * GLOBALS VARIABLES
  **********************************************************************************************************************/
 
-extern motor_data_t motor_data;
+extern motor_data_t motor_data[4];
 extern display_data_t displayData;
 
 /***********************************************************************************************************************
