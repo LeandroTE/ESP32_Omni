@@ -58,7 +58,7 @@ void disp_header(char *info) {
     TFT_print(info, CENTER, 4);
 
     tft_bg = TFT_BLACK;
-    TFT_setclipwin(0, TFT_getfontheight() + 9, tft_width - 1, tft_height - TFT_getfontheight() - 10);
+    TFT_setclipwin(0, TFT_getfontheight() + 9, tft_width - 1, tft_height);
 }
 /***********************************************************************************************************************
  * @brief Function to update display, this function also create the visual of the display
@@ -87,22 +87,35 @@ void update_disp(struct display_data_t *display_data) {
         TFT_print(tmp_buff, 0, FIRST_LINE + 2 * tempy);
         sprintf(tmp_buff, "PWM 3: %3.1f %%", (float)display_data->pwm_duty[3]);
         TFT_print(tmp_buff, 0, FIRST_LINE + 3 * tempy);
-        // sprintf(tmp_buff, "IP:" IPSTR, IP2STR(&event->ip_info.ip));
 
+        // sprintf(tmp_buff, "IP:" IPSTR, IP2STR(&event->ip_info.ip));
         // tft_fg = TFT_YELLOW;
         // TFT_print(tmp_buff, 0, 77);
         state = DISP_INIT;
     } else if (state == DISP_INIT) {
         tft_fg = TFT_GREENYELLOW;
-        TFT_fillRect(0, 0, tft_width - 1, FIRST_LINE + 4 * tempy, tft_bg);
-        sprintf(tmp_buff, "PWM Lidar: %3.1f %%", (float)display_data->pwm_duty[0]);    // Update diplay
-        TFT_print(tmp_buff, 0, FIRST_LINE);
-        sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)display_data->pwm_duty[1]);
-        TFT_print(tmp_buff, 0, FIRST_LINE + tempy);
-        sprintf(tmp_buff, "PWM 2: %3.1f %%", (float)display_data->pwm_duty[2]);
-        TFT_print(tmp_buff, 0, FIRST_LINE + 2 * tempy);
-        sprintf(tmp_buff, "PWM 3: %3.1f %%", (float)display_data->pwm_duty[3]);
-        TFT_print(tmp_buff, 0, FIRST_LINE + 3 * tempy);
+
+        TFT_fillRect(TFT_getStringWidth("PWM Lidar: "), FIRST_LINE, TFT_getStringWidth("XXXXX"), tempy, tft_bg);
+        sprintf(tmp_buff, "%3.1f %%", (float)display_data->pwm_duty[0]);    // Update diplay
+        TFT_print(tmp_buff, TFT_getStringWidth("PWM Lidar: "), FIRST_LINE);
+
+        TFT_fillRect(TFT_getStringWidth("PWM 1: "), FIRST_LINE + 1 * tempy, TFT_getStringWidth("XXXXX"), tempy, tft_bg);
+        sprintf(tmp_buff, "%3.1f %%", (float)display_data->pwm_duty[1]);
+        TFT_print(tmp_buff, TFT_getStringWidth("PWM 1: "), FIRST_LINE + tempy);
+
+        TFT_fillRect(TFT_getStringWidth("PWM 2: "), FIRST_LINE + 2 * tempy, TFT_getStringWidth("XXXXX"), tempy, tft_bg);
+        sprintf(tmp_buff, "%3.1f %%", (float)display_data->pwm_duty[2]);
+        TFT_print(tmp_buff, TFT_getStringWidth("PWM 2: "), FIRST_LINE + 2 * tempy);
+
+        TFT_fillRect(TFT_getStringWidth("PWM 3: "), FIRST_LINE + 3 * tempy, TFT_getStringWidth("XXXXX"), tempy, tft_bg);
+        sprintf(tmp_buff, "%3.1f %%", (float)display_data->pwm_duty[3]);
+        TFT_print(tmp_buff, TFT_getStringWidth("PWM 3: "), FIRST_LINE + 3 * tempy);
+
+        // sprintf(tmp_buff, "PWM 2: %3.1f %%", (float)display_data->pwm_duty[2]);
+        // TFT_print(tmp_buff, 0, FIRST_LINE + 2 * tempy);
+
+        // sprintf(tmp_buff, "PWM 3: %3.1f %%", (float)display_data->pwm_duty[3]);
+        // TFT_print(tmp_buff, 0, FIRST_LINE + 3 * tempy);
     }
 }
 

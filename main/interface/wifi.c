@@ -56,7 +56,7 @@ static void  event_handler(void *arg, esp_event_base_t event_base, int32_t event
         sprintf(displayData.IP_buff, "IP:" IPSTR, IP2STR(&event->ip_info.ip));
         ESP_LOGI(TAG, "%s",displayData.IP_buff);
         tft_fg = TFT_YELLOW;
-        TFT_print(displayData.IP_buff, 0, 77);
+        TFT_print(displayData.IP_buff, 0, 95);
         s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
