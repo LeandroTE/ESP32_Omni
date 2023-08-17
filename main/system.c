@@ -115,7 +115,7 @@ void tft_init() {
     ret = spi_lobo_device_deselect(spi);
     assert(ret == ESP_OK);
 
-    printf("SPI: attached display device, speed=%u\r\n", spi_lobo_get_speed(spi));
+    //printf("SPI: attached display device, speed=%u\r\n", spi_lobo_get_speed(spi));
     printf("SPI: bus uses native pins: %s\r\n", spi_lobo_uses_native_pins(spi) ? "true" : "false");
 
     // ==== Initialize the Display ====
@@ -126,11 +126,11 @@ void tft_init() {
 
     // ==== Detect maximum read speed ====
     tft_max_rdclock = find_rd_speed();
-    printf("SPI: Max rd speed = %u\r\n", tft_max_rdclock);
+    //printf("SPI: Max rd speed = %u\r\n", tft_max_rdclock);
 
     // ==== Set SPI clock used for display operations ====
     spi_lobo_set_speed(spi, DEFAULT_SPI_CLOCK);
-    printf("SPI: Changed speed to %u\r\n", spi_lobo_get_speed(spi));
+    //printf("SPI: Changed speed to %u\r\n", spi_lobo_get_speed(spi));
 
     tft_bg = TFT_BLACK;
     tft_font_rotate = 0;
@@ -200,8 +200,8 @@ void set_PWM_duty(float duty, int channel) {
  *
  **********************************************************************************************************************/
 void GPIO_Init(gpio_config_t io_conf) {
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;    // disable interrupt
-    io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;    // interrupt of rising edge
+    io_conf.intr_type = GPIO_INTR_DISABLE;    // disable interrupt
+    io_conf.intr_type = GPIO_INTR_POSEDGE;    // interrupt of rising edge
     io_conf.pin_bit_mask = GPIO_INPUT_PIN_SEL;    // bit mask of the pins, use GPIO35/0 here
     io_conf.mode = GPIO_MODE_INPUT;               // set as input mode
     io_conf.pull_up_en = 1;                       // enable pull-up mode

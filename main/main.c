@@ -147,7 +147,7 @@ static void rx_task(void *arg) {
     esp_log_level_set(RX_TASK_TAG, ESP_LOG_INFO);
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
     while (1) {
-        const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 50 / portTICK_RATE_MS);
+        const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 50 / portTICK_PERIOD_MS);
 
         if (rxBytes > 0) {
             for (i = 0; i < rxBytes; i++) {
@@ -189,7 +189,7 @@ static void display_task(void *arg) {
         displayData.pwm_duty[2] = motor_data[M2_CH].pwm_duty;       // Update display variable for 3° line
         displayData.pwm_duty[3] = motor_data[M3_CH].pwm_duty;       // Update display variable for 4° line
         update_disp(&displayData);
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -234,7 +234,7 @@ void app_main() {
     // ==== Application configuration ====
     lidarBeginStateMachine(&lidarStateMachine);    // Initialize Lidar state machinne
 
-    vTaskDelay(500 / portTICK_RATE_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     printf("\r\n==============================\r\n");
     printf("iOmni, LEANDRO 06/2020\r\n");
     printf("==============================\r\n\n");

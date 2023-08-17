@@ -14,6 +14,8 @@
 #include "esp_vfs.h"
 #include <fcntl.h>
 #include <string.h>
+#include <esp_chip_info.h>
+#include <esp_random.h>
 
 static const char *REST_TAG = "esp-rest";
 #define REST_CHECK(a, str, goto_tag, ...)                                                                              \
