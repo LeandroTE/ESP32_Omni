@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "../Globals.h"
 
 #include "esp_system.h"
 #include "esp_wifi.h"
@@ -30,7 +31,6 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-#include "spiffs_vfs.h"
 #include "tft.h"
 #include "tftspi.h"
 

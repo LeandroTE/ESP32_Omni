@@ -25,9 +25,12 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "spiffs_vfs.h"
 #include "tft.h"
 #include "tftspi.h"
+
+#include "esp_log.h"
+#include "esp_spiffs.h"
+#include "esp_vfs_fat.h"
 
 /***********************************************************************************************************************
  * COSNTANTS
@@ -38,7 +41,7 @@
  **********************************************************************************************************************/
 
 // ================== TFT ==================
-#define SPI_BUS TFT_HSPI_HOST        // Define which spi bus to use TFT_VSPI_HOST or TFT_HSPI_HOST
+#define SPI_BUS TFT_HSPI_HOST    // Define which spi bus to use TFT_VSPI_HOST or TFT_HSPI_HOST
 
 // ================== PWM ==================
 
@@ -61,8 +64,8 @@
 #define MAX_DUTY_CYCLE (8192)
 
 // ================== GPIO ==================
-#define GPIO_INPUT_IO_0 35        // Button 1
-#define GPIO_INPUT_IO_1 0         // Button2
+#define GPIO_INPUT_IO_0 35    // Button 1
+#define GPIO_INPUT_IO_1 0     // Button2
 #define GPIO_INPUT_PIN_SEL ((1ULL << GPIO_INPUT_IO_0) | (1ULL << GPIO_INPUT_IO_1))
 #define ESP_INTR_FLAG_DEFAULT 0
 
@@ -107,6 +110,9 @@ void GPIO_Init(gpio_config_t io_conf);
 // ================== UART ==================
 void uart_init();
 int sendData(const char *data);
+
+// =============== FILE SYSTEM ==============
+esp_err_t init_fs(void);
 
 /***********************************************************************************************************************
  * END OF FILE

@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- ===  Primitus Omni Project====
+ ===  iOmni Project====
  * @file 	main.c
  * @brief	System functions
  * @author	Leandro
@@ -12,6 +12,7 @@
  * INCLUDES
  **********************************************************************************************************************/
 
+#include "Globals.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,29 +32,40 @@
 
 #include "RPLidar.h"
 #include "display.h"
-#include "spiffs_vfs.h"
 #include "system.h"
 #include "tft.h"
 #include "tftspi.h"
 #include "wifi.h"
 
+#include "lwip/apps/netbiosns.h"
 #include "lwip/err.h"
 #include "lwip/sys.h"
+
+#include "esp_netif.h"
+#include "esp_spiffs.h"
+#include "esp_vfs_fat.h"
+#include "sdkconfig.h"
 
 /***********************************************************************************************************************
  * COSNTANTS
  **********************************************************************************************************************/
+static const char *TAG = "MAIN";
 
 /***********************************************************************************************************************
  * MACROS
  **********************************************************************************************************************/
-#define FIRST_LINE 5
 #define RX_BUFFER_SZ 1000
+#define FIRST_LINE 5
 
 // ==== TASK PRIORITIES ====
 #define GPIO_TASK_PRIORITY 7
 #define RX_TASK_PRIORITY 6
 #define LIDAR_TASK_PRIORITY 5
+#define DISPLAY_TASK_PRIORITY 4
+
+// ==== HTTP Server =====
+#define MDNS_INSTANCE "esp home web server"
+
 /***********************************************************************************************************************
  * TYPES
  **********************************************************************************************************************/
@@ -62,10 +74,10 @@
  * GLOBALS VARIABLES
  **********************************************************************************************************************/
 // ==== Variables ====
-static char tmp_buff[64];
-float pwm_duty[4] = {0.0, 0.0, 0.0, 0.0};
+motor_data_t motor_data[4];
 
 struct lidarStateMachine lidarStateMachine;
+display_data_t displayData;
 
 // ==== Task Handle ====
 TaskHandle_t gpio_taskHandle = NULL;
@@ -74,6 +86,8 @@ TaskHandle_t lidar_taskHandle = NULL;
 // ==== Queue Handle ====
 static xQueueHandle gpio_evt_queue = NULL;
 static xQueueHandle rx_buffer_queue = NULL;
+
+esp_err_t start_rest_server(const char *base_path);
 
 /***********************************************************************************************************************
  * ISR'S
@@ -109,10 +123,10 @@ static void gpio_task(void *arg) {
                     //    pwm_duty[0] = 90.0;        // Set channel 0 (PWM Lidar) to 70% duty cycle
                     //}
                     sendRequest(RPLIDAR_CMD_RESET, NULL, 0, &lidarStateMachine);
-                    set_PWM_duty(pwm_duty[0], 0);
-                    sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);    // Update diplay
-                    TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
-                    TFT_print(tmp_buff, 0, FIRST_LINE);
+                    // set_PWM_duty(pwm_duty[0], 0);
+                    // sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);    // Update diplay
+                    // TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
+                    // TFT_print(tmp_buff, 0, FIRST_LINE);
                 }
             } else if (io_num == BUTTON2 && gpio_get_level(io_num) == 1) {    // Check if GPIO35 was pressed
                 if (xTaskGetTickCount() - button2LastTimePressed > 100) {     // Simple debounce cnt using RTOS Ticks
@@ -133,7 +147,7 @@ static void rx_task(void *arg) {
     esp_log_level_set(RX_TASK_TAG, ESP_LOG_INFO);
     uint8_t *data = (uint8_t *)malloc(RX_BUF_SIZE + 1);
     while (1) {
-        const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 50 / portTICK_RATE_MS);
+        const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 50 / portTICK_PERIOD_MS);
 
         if (rxBytes > 0) {
             for (i = 0; i < rxBytes; i++) {
@@ -168,6 +182,17 @@ static void lidar_task(void *arg) {
     }
 }
 
+static void display_task(void *arg) {
+    while (1) {
+        displayData.pwm_duty[0] = motor_data[LIDAR_CH].pwm_duty;    // Update display variable for 1° line
+        displayData.pwm_duty[1] = motor_data[M1_CH].pwm_duty;       // Update display variable for 2° line
+        displayData.pwm_duty[2] = motor_data[M2_CH].pwm_duty;       // Update display variable for 3° line
+        displayData.pwm_duty[3] = motor_data[M3_CH].pwm_duty;       // Update display variable for 4° line
+        update_disp(&displayData);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
 /***********************************************************************************************************************
  * LOCALS FUNCTIONS
  **********************************************************************************************************************/
@@ -175,7 +200,7 @@ static void lidar_task(void *arg) {
 void app_main() {
     gpio_config_t io_conf;    // Declare GPIO config structure
 
-    // ==== System Initialization ====
+    /* ==== System Initialization ====*/
     tft_init();            // TFT Init
     pwm_init();            // PWM Init
     GPIO_Init(io_conf);    // GPIO Init
@@ -196,7 +221,8 @@ void app_main() {
                 &gpio_taskHandle);                                                   // Create gpio task
     xTaskCreate(rx_task, "uart_rx_task", 1024 * 2, NULL, RX_TASK_PRIORITY, NULL);    // Create RX Task
     xTaskCreate(lidar_task, "lidar_task", 1024 * 2, NULL, LIDAR_TASK_PRIORITY,
-                &lidar_taskHandle);    // Create Lidar task
+                &lidar_taskHandle);                                                            // Create Lidar task
+    xTaskCreate(display_task, "display_task", 1024 * 2, NULL, DISPLAY_TASK_PRIORITY, NULL);    // Create Display Task
 
     // ==== ISR inicialization ====
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);    // install gpio isr service
@@ -208,39 +234,34 @@ void app_main() {
     // ==== Application configuration ====
     lidarBeginStateMachine(&lidarStateMachine);    // Initialize Lidar state machinne
 
-    vTaskDelay(500 / portTICK_RATE_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     printf("\r\n==============================\r\n");
-    printf("PRIMITUS OMNI, LEANDRO 06/2020\r\n");
+    printf("iOmni, LEANDRO 06/2020\r\n");
     printf("==============================\r\n\n");
 
-    TFT_setRotation(1);
-    disp_header("PRIMITUS OMNI v0.1");
-    TFT_setFont(DEFAULT_FONT, NULL);
-    int tempy = TFT_getfontheight() + 4;
-    tft_fg = TFT_GREENYELLOW;
-    sprintf(tmp_buff, "PWM 1: %3.1f %%", (float)pwm_duty[0]);
-    TFT_print(tmp_buff, 0, FIRST_LINE);
-    sprintf(tmp_buff, "PWM 2: %3.1f %%", (float)pwm_duty[1]);
-    TFT_print(tmp_buff, 0, FIRST_LINE + tempy);
-    sprintf(tmp_buff, "PWM 3: %3.1f %%", (float)pwm_duty[2]);
-    TFT_print(tmp_buff, 0, FIRST_LINE + 2 * tempy);
-    sprintf(tmp_buff, "PWM 4: %3.1f %%", (float)pwm_duty[3]);
-    TFT_print(tmp_buff, 0, FIRST_LINE + 3 * tempy);
     gpio_set_level(GPIO_OUTPUT_IO_0, 0);
     gpio_set_level(GPIO_OUTPUT_IO_1, 0);
     gpio_set_level(GPIO_OUTPUT_IO_2, 0);
 
-    pwm_duty[3] = 80.0;    // Set channel 3 (PWM Lidar) to 70% duty cycle
-    set_PWM_duty(pwm_duty[3], 3);
-    sprintf(tmp_buff, "PWM Lidar: %3.1f %%", (float)pwm_duty[3]);    // Update diplay
-    TFT_fillRect(0, 0, tft_width - 1, TFT_getfontheight() + 4, tft_bg);
-    TFT_print(tmp_buff, 0, FIRST_LINE);
+    motor_data[LIDAR_CH].pwm_duty = 80.0;                       // Set channel 3 (PWM Lidar) to 80% duty cycle
+    set_PWM_duty(motor_data[LIDAR_CH].pwm_duty, LIDAR_CH);      // Set channel 3 (PWM Lidar) to 80% duty cycle
+    displayData.pwm_duty[0] = motor_data[LIDAR_CH].pwm_duty;    // Update display variable for 1° line
+    displayData.pwm_duty[1] = motor_data[M1_CH].pwm_duty;       // Update display variable for 2° line
+    displayData.pwm_duty[2] = motor_data[M2_CH].pwm_duty;       // Update display variable for 3° line
+    displayData.pwm_duty[3] = motor_data[M3_CH].pwm_duty;       // Update display variable for 4° line
+    update_disp(&displayData);                                  // Update display (in this case initialize display)
 
     // ==== Wifi Inicialization ====
     printf("\r\n==============================\r\n");
     printf("Wifi sequence start\r\n");
     printf("==============================\r\n\n");
+
+    // initialise_mdns();
+    netbiosns_init();
+    netbiosns_set_name(CONFIG_EXAMPLE_MDNS_HOST_NAME);
     wifi_init_sta();    // Start wifi
+    ESP_ERROR_CHECK(init_fs());
+    ESP_ERROR_CHECK(start_rest_server(CONFIG_EXAMPLE_WEB_MOUNT_POINT));
 }
 
 /***********************************************************************************************************************
